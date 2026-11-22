@@ -1,6 +1,6 @@
 /**
  * NPC Studio — mobs.js : spawn / freeze / ride vanilla mobs as props.
- * Copyright (c) 2026 NoxeelMC. Licensed under GPL-3.0-or-later: see LICENSE and NOTICE.md.
+ * Copyright (c) 2026 NoxeelMC.
  */
 import { menu, modal, msg, ICON, MOB_TAG } from "./core.js";
 import { openPutNpcOn, openMobPoses, freezeMob, refreeze } from "./mount.js";

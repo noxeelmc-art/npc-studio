@@ -7,7 +7,7 @@
  *  - "reframe" mode: moves an existing camera there
  *  - "path" mode: every tap adds a point; double-tap (or /lockcam) finishes the path
  * Zoom: scroll or tap the hotbar. No text is ever shown on screen while filming.
- * Copyright (c) 2026 NoxeelMC. Licensed under GPL-3.0-or-later: see LICENSE and NOTICE.md.
+ * Copyright (c) 2026 NoxeelMC.
  */
 import { EasingType } from "@minecraft/server";
 import { world, system, msg, sfx, actionbar, CAM_PRESET, setJson } from "./core.js";

@@ -2,7 +2,7 @@
  * NPC Studio V3.2 — live.js : editors that live inside the Studio panel.
  * Sliders and steppers are panel rows (core.js menu): tapping - / + changes the NPC or the world
  * and redraws the panel at once, so the world stays in view on the right while you work.
- * Copyright (c) 2026 NoxeelMC. Licensed under GPL-3.0-or-later: see LICENSE and NOTICE.md.
+ * Copyright (c) 2026 NoxeelMC.
  */
 import { EasingType } from "@minecraft/server";
 import { system, world, menu, keep, sfx, clamp, orbitPoint, CAM_PRESET, ICON, npcLabel } from "./core.js";

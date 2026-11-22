@@ -8,7 +8,7 @@
  * - HUD hidden, NPC name tags hidden, smooth fade in/out.
  * - Every time you enter, you're told how to get out: /exitcam, or double-tap sneak.
  * - If you leave the world mid-shot, everything is restored when you come back.
- * Copyright (c) 2026 NoxeelMC. Licensed under GPL-3.0-or-later: see LICENSE and NOTICE.md.
+ * Copyright (c) 2026 NoxeelMC.
  */
 import { GameMode, HudVisibility, HudElement, InputPermissionCategory, EquipmentSlot } from "@minecraft/server";
 import { world, system, msg, actionbar, NPC_FAMILY, getJson, setJson } from "./core.js";

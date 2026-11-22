@@ -3,7 +3,7 @@
  *   Display · Pose · Presets · World · Camera · Layers
  * Opened by the Director's Baton, tapping an NPC, /npcstudio:npc. Checkboxes flip in one tap; sliders and
  * steppers (- / +) change the NPC right away and redraw the panel, so the world stays in view.
- * Copyright (c) 2026 NoxeelMC. Licensed under GPL-3.0-or-later: see LICENSE and NOTICE.md.
+ * Copyright (c) 2026 NoxeelMC.
  */
 import { VERSION } from "./version.js";
 import { openLiveEditor, hasLiveEditor } from "./liveform.js";

@@ -3,7 +3,7 @@
  * bow pulled back, crossbow loaded / charged, trident raised, shield blocking, spyglass at the eye,
  * goat horn played. Each step sets the arms; bows and crossbows also show Minecraft's own pulling /
  * charged pictures (bits 11-13 of npcstudio:flags, read by RP/attachables/bow.json + crossbow.json).
- * Copyright (c) 2026 NoxeelMC. Licensed under GPL-3.0-or-later: see LICENSE and NOTICE.md.
+ * Copyright (c) 2026 NoxeelMC.
  */
 import { setRot, pushUndo } from "./rig.js";
 import { getEquip } from "./wardrobe.js";

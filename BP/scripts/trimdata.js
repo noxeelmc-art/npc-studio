@@ -2,7 +2,7 @@
  * NPC Studio — trimdata.js
  * Shared with tools/build.py, which generates one loot table per (item, pattern, material)
  * from the JSON block below. Keep the block valid JSON.
- * Copyright (c) 2026 NoxeelMC. Licensed under GPL-3.0-or-later: see LICENSE and NOTICE.md.
+ * Copyright (c) 2026 NoxeelMC.
  */
 export const TRIM_DATA = /*JSON-START*/ {
   "patterns": ["sentry", "dune", "coast", "wild", "ward", "eye", "vex", "tide", "snout", "rib", "spire", "wayfinder", "shaper", "silence", "raiser", "host", "flow", "bolt"],

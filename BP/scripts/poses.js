@@ -4,7 +4,7 @@
  * "root" is the whole body: rotate it to lie down / fly, move it to sit on the ground.
  * Conventions: arm/leg X negative = forward/up, body X positive = lean forward,
  * right arm Z positive = out to the side (left arm uses negative), right arm Y positive = inward.
- * Copyright (c) 2026 NoxeelMC. Licensed under GPL-3.0-or-later: see LICENSE and NOTICE.md.
+ * Copyright (c) 2026 NoxeelMC.
  */
 
 export const POSE_CATEGORIES = [

@@ -8,7 +8,7 @@
  * Mob poses: horse rearing (custom animation), wolf/cat/fox/panda/camel sitting, fox sleeping,
  * panda lying, allay dancing, warden roar... played with /playanimation and re-applied so
  * players who join later see them too.
- * Copyright (c) 2026 NoxeelMC. Licensed under GPL-3.0-or-later: see LICENSE and NOTICE.md.
+ * Copyright (c) 2026 NoxeelMC.
  */
 import { world, system, menu, modal, msg, ICON, NPC_FAMILY, NPC_ID, MOB_TAG, CAMERA_ID, forward, right, getJson, setJson, npcLabel, npcsNear } from "./core.js";
 import { applyPose, expandPreset, pushUndo, getScale, getRot, setRot } from "./rig.js";

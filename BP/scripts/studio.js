@@ -9,7 +9,7 @@
  *   ① full shot  ② NPCs on a green screen  ③ background without NPCs.
  * Green screen: a big flat-colour box around the scene (npcstudio:backdrop, drawn from inside).
  * Add-ons can't take screenshots or save files, so the player presses their device's screenshot.
- * Copyright (c) 2026 NoxeelMC. Licensed under GPL-3.0-or-later: see LICENSE and NOTICE.md.
+ * Copyright (c) 2026 NoxeelMC.
  */
 import { HudVisibility } from "@minecraft/server";
 import { world, system, msg, sfx, actionbar, NPC_FAMILY, MOB_TAG, CAMERA_ID, CAM_PRESET, getJson, setJson, forward, clamp } from "./core.js";

@@ -8,7 +8,7 @@
  * - Scene presets: save every NPC, mob, prop and camera around you and place the scene elsewhere.
  * - Tools: NPC Stamp (copy / paste), NPC Rotator (face me), Teleporter (go where you look).
  * - Studio World Rules: one tap for a calm filming world.
- * Copyright (c) 2026 NoxeelMC. Licensed under GPL-3.0-or-later: see LICENSE and NOTICE.md.
+ * Copyright (c) 2026 NoxeelMC.
  */
 import { ItemStack, StructureSaveMode } from "@minecraft/server";
 import {

@@ -1,6 +1,6 @@
 /**
  * NPC Studio — npc.js : spawning, cloning, presets, look-at-player, and the main menus.
- * Copyright (c) 2026 NoxeelMC. Licensed under GPL-3.0-or-later: see LICENSE and NOTICE.md.
+ * Copyright (c) 2026 NoxeelMC.
  */
 import { StructureSaveMode } from "@minecraft/server";
 import {

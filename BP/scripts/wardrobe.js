@@ -15,7 +15,7 @@
  *                   Powers "Copy My Outfit", "Give Held Item" and Shift+Right-Click.
  *  3. Command route — `/replaceitem` (+ `/enchant` for the main hand). Plain fallback.
  *
- * Copyright (c) 2026 NoxeelMC. Licensed under GPL-3.0-or-later: see LICENSE and NOTICE.md.
+ * Copyright (c) 2026 NoxeelMC.
  */
 import { trimPage } from "./live.js";
 import { EquipmentSlot, ItemStack, ItemTypes, EntityComponentTypes, EnchantmentTypes } from "@minecraft/server";

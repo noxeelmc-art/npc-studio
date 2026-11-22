@@ -2,7 +2,7 @@
  * NPC Studio — hotbar.js : temporary tool items on the player's hotbar.
  * Your own hotbar items are moved to free inventory slots and put back afterwards.
  * Everything is recorded on the player, so a crash or leaving the world can't lose items.
- * Copyright (c) 2026 NoxeelMC. Licensed under GPL-3.0-or-later: see LICENSE and NOTICE.md.
+ * Copyright (c) 2026 NoxeelMC.
  */
 import { ItemStack } from "@minecraft/server";
 import { getJson, setJson } from "./core.js";

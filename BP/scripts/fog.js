@@ -3,7 +3,7 @@
  * Far things fade into a colour while close things stay sharp, which gives shots depth and makes
  * the NPC stand out (the Java NPC Studio's depth-map shader idea, done with Bedrock's own fog).
  * Fog files: RP/fogs/npcstudio_<preset>_<distance>.json (tools/make_models.py).
- * Copyright (c) 2026 NoxeelMC. Licensed under GPL-3.0-or-later: see LICENSE and NOTICE.md.
+ * Copyright (c) 2026 NoxeelMC.
  */
 import { system, getJson, setJson } from "./core.js";
 

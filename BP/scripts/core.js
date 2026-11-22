@@ -1,6 +1,6 @@
 /**
  * NPC Studio — core.js (shared constants + helpers)
- * Copyright (c) 2026 NoxeelMC. Licensed under GPL-3.0-or-later: see LICENSE and NOTICE.md.
+ * Copyright (c) 2026 NoxeelMC.
  */
 import { world, system, InputPermissionCategory, HudVisibility } from "@minecraft/server";
 import { ActionFormData, ModalFormData, MessageFormData } from "@minecraft/server-ui";

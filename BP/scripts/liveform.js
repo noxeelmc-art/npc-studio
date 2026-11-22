@@ -7,7 +7,7 @@
  * write straight into the NPC while the form stays open, and a tab dropdown only shows or hides
  * groups of controls. One tap = one change, no reload.
  * It looks like Minecraft's own settings screens (data-driven forms can't be restyled by packs).
- * Copyright (c) 2026 NoxeelMC. Licensed under GPL-3.0-or-later: see LICENSE and NOTICE.md.
+ * Copyright (c) 2026 NoxeelMC.
  */
 import * as ui from "@minecraft/server-ui";
 import { world, system, msg } from "./core.js";

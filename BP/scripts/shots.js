@@ -3,7 +3,7 @@
  * 30 shot types (orbits, dolly zoom, crane, drone fly-by, over-the-shoulder, whip pan...),
  * adjustable length/distance/height/easing, handheld sway, fades, and a shot sequencer that
  * plays a list of shots back-to-back like an edited video. Sneak to stop any time.
- * Copyright (c) 2026 NoxeelMC. Licensed under GPL-3.0-or-later: see LICENSE and NOTICE.md.
+ * Copyright (c) 2026 NoxeelMC.
  */
 import { EasingType } from "@minecraft/server";
 import {

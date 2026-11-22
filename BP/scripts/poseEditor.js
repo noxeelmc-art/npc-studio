@@ -7,7 +7,7 @@
  * scroll/tap hotbar = change axis,
  * hit/swing = switch Rotate <-> Move. Works on touch, controller and mouse.
  * Plus precise sliders, nudge pad, mirror, copy/paste, undo/redo, pose library, scale.
- * Copyright (c) 2026 NoxeelMC. Licensed under GPL-3.0-or-later: see LICENSE and NOTICE.md.
+ * Copyright (c) 2026 NoxeelMC.
  */
 import { InputPermissionCategory } from "@minecraft/server";
 import { world, system, menu, modal, msg, sfx, editorHudReset, actionbar, corner, clearCorner, ICON, clamp, wrapDeg, round, getJson, setJson, forward, right } from "./core.js";

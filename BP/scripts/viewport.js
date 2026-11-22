@@ -2,7 +2,7 @@
  * NPC Studio V3.2 — viewport.js : the free space right of the Studio panel.
  * While the panel is open you can turn your view there (look around), but you can't walk, break,
  * place or hit. Tapping an NPC in that space selects it and the panel switches to it.
- * Copyright (c) 2026 NoxeelMC. Licensed under GPL-3.0-or-later: see LICENSE and NOTICE.md.
+ * Copyright (c) 2026 NoxeelMC.
  */
 import { uiManager } from "@minecraft/server-ui";
 import { world, system, safeOn, isEditing, NPC_FAMILY, sfx } from "./core.js";

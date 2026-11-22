@@ -6,7 +6,7 @@
  * Positions are packed 3-per-int (base 256, 0.25 px steps => +/-32 px per axis) and the
  * root rotation is packed the same way in 1.5 degree steps. Bedrock allows only 32 entity
  * properties, so packing is what lets us have full per-bone transforms.
- * Copyright (c) 2026 NoxeelMC. Licensed under GPL-3.0-or-later: see LICENSE and NOTICE.md.
+ * Copyright (c) 2026 NoxeelMC.
  */
 import { clamp, round } from "./core.js";
 

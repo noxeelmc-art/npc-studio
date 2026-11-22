@@ -2,7 +2,7 @@
  * NPC Studio V3.4 — extras.js : the Java editor's Display / World switches that Bedrock can do.
  *   Sneak, Living (breathing), On Fire (flames around the NPC), Look At, Flip,
  *   World Bright (night vision without particles), Gamerules.
- * Copyright (c) 2026 NoxeelMC. Licensed under GPL-3.0-or-later: see LICENSE and NOTICE.md.
+ * Copyright (c) 2026 NoxeelMC.
  */
 import { world, system, NPC_FAMILY, toDeg } from "./core.js";
 import { getRot, getPos, setRot, setPos, getScale, getAnim, setAnim, pushUndo } from "./rig.js";

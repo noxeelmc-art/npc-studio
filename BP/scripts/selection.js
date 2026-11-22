@@ -1,6 +1,6 @@
 /**
  * NPC Studio V3 — selection.js : selected NPCs + the cyan outline everyone sees.
- * Copyright (c) 2026 NoxeelMC. Licensed under GPL-3.0-or-later: see LICENSE and NOTICE.md.
+ * Copyright (c) 2026 NoxeelMC.
  *
  * The outline, "NPC Bright" and the cape share one entity property (npcstudio:flags):
  *   bit 0 (1)        outline visible

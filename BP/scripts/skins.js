@@ -5,7 +5,7 @@
  * runtime. What we CAN do: 20 custom slots whose names come from a language key, so a small
  * "skin pack" (made with tools/skin-pack-builder.html, right on your phone) can replace the
  * pictures AND the names without touching NPC Studio's files. Names can also be set in-game.
- * Copyright (c) 2026 NoxeelMC. Licensed under GPL-3.0-or-later: see LICENSE and NOTICE.md.
+ * Copyright (c) 2026 NoxeelMC.
  */
 import { world, menu, modal, msg, ICON } from "./core.js";
 import { MOB_FIRST, MOBS } from "./mobdata.js";

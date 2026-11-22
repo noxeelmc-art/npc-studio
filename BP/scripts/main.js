@@ -1,6 +1,6 @@
 /**
  * NPC Studio — main.js (entry point: events + tool wiring)
- * Copyright (c) 2026 NoxeelMC. Licensed under GPL-3.0-or-later: see LICENSE and NOTICE.md.
+ * Copyright (c) 2026 NoxeelMC.
  * youtube.com/@NoxeelMC
  *
  * You may use this add-on freely and redistribute the packaged .mcaddon as-is with

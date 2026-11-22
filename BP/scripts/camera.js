@@ -3,7 +3,7 @@
  * v3: FOV actually works now (the old code passed `fovValue`, the API wants `fov`),
  * camera paths are smooth Catmull-Rom splines with per-point timing + FOV, "Snap to my view"
  * for fast framing, and the control panel is split into short sub-menus.
- * Copyright (c) 2026 NoxeelMC. Licensed under GPL-3.0-or-later: see LICENSE and NOTICE.md.
+ * Copyright (c) 2026 NoxeelMC.
  */
 import { EasingType } from "@minecraft/server";
 import { enterCinema, exitCinema, inCinema } from "./cinema.js";

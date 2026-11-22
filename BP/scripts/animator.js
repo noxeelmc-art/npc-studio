@@ -2,7 +2,7 @@
  * NPC Studio — animator.js : keyframe animation for NPCs (pose + position + turning + size).
  * "Walk 2 steps, turn to the player, jump" = 3-4 keyframes. Or record your own walk and the
  * NPC replays it. Interpolated every tick with easing.
- * Copyright (c) 2026 NoxeelMC. Licensed under GPL-3.0-or-later: see LICENSE and NOTICE.md.
+ * Copyright (c) 2026 NoxeelMC.
  */
 import { world, system, menu, modal, msg, ICON, lerp, lerp3, wrapDeg, EASE, EASE_KEYS, EASE_LABELS, getJson, setJson, npcsNear, NPC_FAMILY, actionbar } from "./core.js";
 import { readPose, applyPose, lerpPose, getScale, setScale, getAnim, setAnim, pushUndo } from "./rig.js";

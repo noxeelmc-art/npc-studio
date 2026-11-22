@@ -10,7 +10,7 @@
  *                in the world reports its presets once. Many preset packs can be active together.
  *   PC files     .mcstructure files exported with a structure block, put in a behavior pack under
  *                structures/npcstudio_presets/; listed with getPackStructureIds().
- * Copyright (c) 2026 NoxeelMC. Licensed under GPL-3.0-or-later: see LICENSE and NOTICE.md.
+ * Copyright (c) 2026 NoxeelMC.
  */
 import { world, system } from "@minecraft/server";
 

@@ -1,7 +1,7 @@
 /**
  * NPC Studio — handbook.js : the in-game manual (the "NPC Studio Handbook" item).
  * Menus only show short names; this book explains what every feature does.
- * Copyright (c) 2026 NoxeelMC. Licensed under GPL-3.0-or-later: see LICENSE and NOTICE.md.
+ * Copyright (c) 2026 NoxeelMC.
  */
 import { menu, ICON, sfx } from "./core.js";
 
