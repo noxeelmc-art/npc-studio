@@ -4,9 +4,9 @@
 
 <br>
 
-<a href="https://discord.gg/UGSPAUBUvF"><img src=".github/readme/discord.png" alt="Chat with us on Discord" height="72"></a>&nbsp;
-<a href="https://noxeelmc-art.github.io/npc-studio-skins/"><img src=".github/readme/packbuilder.png" alt="Pack Builder website" height="72"></a>&nbsp;
-<a href="https://youtube.com/@NoxeelMC"><img src=".github/readme/youtube.png" alt="Watch on YouTube" height="72"></a>
+<a href="https://discord.gg/UGSPAUBUvF"><img src=".github/readme/discord.png" alt="Chat with us on Discord" height="62"></a>&nbsp;
+<a href="https://noxeelmc-art.github.io/npc-studio-skins/"><img src=".github/readme/packbuilder.png" alt="Pack Builder website" height="62"></a>&nbsp;
+<a href="https://youtube.com/@NoxeelMC"><img src=".github/readme/youtube.png" alt="Watch on YouTube" height="62"></a>
 
 <br><br>
 
