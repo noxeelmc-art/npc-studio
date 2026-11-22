@@ -1,0 +1,515 @@
+{
+  "format_version": "1.10.0",
+  "render_controllers": {
+    "controller.render.npcstudio.default": {
+      "arrays": {
+        "textures": {
+          "Array.skins": [
+            "Texture.skin0",
+            "Texture.skin1",
+            "Texture.skin2",
+            "Texture.skin3",
+            "Texture.skin4",
+            "Texture.skin5",
+            "Texture.skin6",
+            "Texture.skin7",
+            "Texture.skin8",
+            "Texture.skin9",
+            "Texture.skin10",
+            "Texture.skin11",
+            "Texture.skin12",
+            "Texture.skin13",
+            "Texture.skin14",
+            "Texture.skin15",
+            "Texture.skin16",
+            "Texture.skin17",
+            "Texture.skin18",
+            "Texture.skin19",
+            "Texture.skin20",
+            "Texture.skin21",
+            "Texture.skin22",
+            "Texture.skin23",
+            "Texture.skin24",
+            "Texture.skin25",
+            "Texture.skin26",
+            "Texture.skin27",
+            "Texture.skin28",
+            "Texture.skin29",
+            "Texture.skin30",
+            "Texture.skin31"
+          ]
+        },
+        "geometries": {
+          "Array.geos": [
+            "Geometry.default",
+            "Geometry.slim",
+            "Geometry.prop"
+          ]
+        }
+      },
+      "geometry": "Array.geos[math.mod(math.floor(query.property('npcstudio:flags') / 64), 2) == 1 ? 2 : (query.property('npcstudio:slim') ? 1 : 0)]",
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "textures": [
+        "Array.skins[query.property('npcstudio:skin_index')]"
+      ]
+    },
+    "controller.render.npcstudio.bright": {
+      "arrays": {
+        "textures": {
+          "Array.skins": [
+            "Texture.skin0",
+            "Texture.skin1",
+            "Texture.skin2",
+            "Texture.skin3",
+            "Texture.skin4",
+            "Texture.skin5",
+            "Texture.skin6",
+            "Texture.skin7",
+            "Texture.skin8",
+            "Texture.skin9",
+            "Texture.skin10",
+            "Texture.skin11",
+            "Texture.skin12",
+            "Texture.skin13",
+            "Texture.skin14",
+            "Texture.skin15",
+            "Texture.skin16",
+            "Texture.skin17",
+            "Texture.skin18",
+            "Texture.skin19",
+            "Texture.skin20",
+            "Texture.skin21",
+            "Texture.skin22",
+            "Texture.skin23",
+            "Texture.skin24",
+            "Texture.skin25",
+            "Texture.skin26",
+            "Texture.skin27",
+            "Texture.skin28",
+            "Texture.skin29",
+            "Texture.skin30",
+            "Texture.skin31"
+          ]
+        },
+        "geometries": {
+          "Array.geos": [
+            "Geometry.default",
+            "Geometry.slim",
+            "Geometry.prop"
+          ]
+        }
+      },
+      "geometry": "Array.geos[math.mod(math.floor(query.property('npcstudio:flags') / 64), 2) == 1 ? 2 : (query.property('npcstudio:slim') ? 1 : 0)]",
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "textures": [
+        "Array.skins[query.property('npcstudio:skin_index')]"
+      ],
+      "ignore_lighting": true
+    },
+    "controller.render.npcstudio.outline": {
+      "arrays": {
+        "geometries": {
+          "Array.outline": [
+            "Geometry.outline",
+            "Geometry.outline_slim"
+          ]
+        }
+      },
+      "geometry": "Array.outline[query.property('npcstudio:slim') ? 1 : 0]",
+      "materials": [
+        {
+          "*": "Material.outline"
+        }
+      ],
+      "textures": [
+        "Texture.outline"
+      ],
+      "ignore_lighting": true
+    },
+    "controller.render.npcstudio.cape": {
+      "arrays": {
+        "textures": {
+          "Array.capes": [
+            "Texture.cape1",
+            "Texture.cape2",
+            "Texture.cape3",
+            "Texture.cape4",
+            "Texture.cape5",
+            "Texture.cape6",
+            "Texture.cape7",
+            "Texture.cape8",
+            "Texture.custom_cape1",
+            "Texture.custom_cape2",
+            "Texture.custom_cape3",
+            "Texture.custom_cape4",
+            "Texture.custom_cape5",
+            "Texture.custom_cape6",
+            "Texture.custom_cape7",
+            "Texture.jcape1",
+            "Texture.jcape2",
+            "Texture.jcape3",
+            "Texture.jcape4",
+            "Texture.jcape5",
+            "Texture.jcape6",
+            "Texture.jcape7",
+            "Texture.jcape8",
+            "Texture.jcape9",
+            "Texture.jcape10",
+            "Texture.jcape11",
+            "Texture.jcape12",
+            "Texture.jcape13",
+            "Texture.jcape14",
+            "Texture.jcape15",
+            "Texture.jcape16",
+            "Texture.jcape17",
+            "Texture.jcape18",
+            "Texture.jcape19",
+            "Texture.jcape20",
+            "Texture.jcape21",
+            "Texture.jcape22",
+            "Texture.jcape23",
+            "Texture.jcape24",
+            "Texture.jcape25",
+            "Texture.jcape26",
+            "Texture.jcape27",
+            "Texture.jcape28",
+            "Texture.jcape29",
+            "Texture.jcape30",
+            "Texture.jcape31",
+            "Texture.jcape32",
+            "Texture.jcape33",
+            "Texture.jcape34",
+            "Texture.jcape35",
+            "Texture.jcape36",
+            "Texture.jcape37",
+            "Texture.jcape38",
+            "Texture.jcape39",
+            "Texture.jcape40",
+            "Texture.jcape41",
+            "Texture.jcape42",
+            "Texture.jcape43"
+          ]
+        }
+      },
+      "geometry": "Geometry.cape",
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "textures": [
+        "Array.capes[math.mod(math.floor(query.property('npcstudio:flags') / 4), 16) + math.mod(math.floor(query.property('npcstudio:flags') / 65536), 4) * 16 - 1]"
+      ]
+    },
+    "controller.render.npcstudio.outline_sil": {
+      "arrays": {
+        "geometries": {
+          "Array.sil": [
+            "Geometry.sil_0_t0",
+            "Geometry.sil_0_t1",
+            "Geometry.sil_0_t2",
+            "Geometry.sil_0_t3",
+            "Geometry.sil_0_armor",
+            "Geometry.sil_0_slim_t0",
+            "Geometry.sil_0_slim_t1",
+            "Geometry.sil_0_slim_t2",
+            "Geometry.sil_0_slim_t3",
+            "Geometry.sil_0_slim_armor",
+            "Geometry.sil_1_t0",
+            "Geometry.sil_1_t1",
+            "Geometry.sil_1_t2",
+            "Geometry.sil_1_t3",
+            "Geometry.sil_1_armor",
+            "Geometry.sil_1_slim_t0",
+            "Geometry.sil_1_slim_t1",
+            "Geometry.sil_1_slim_t2",
+            "Geometry.sil_1_slim_t3",
+            "Geometry.sil_1_slim_armor",
+            "Geometry.sil_2_t0",
+            "Geometry.sil_2_t1",
+            "Geometry.sil_2_t2",
+            "Geometry.sil_2_t3",
+            "Geometry.sil_2_armor",
+            "Geometry.sil_2_slim_t0",
+            "Geometry.sil_2_slim_t1",
+            "Geometry.sil_2_slim_t2",
+            "Geometry.sil_2_slim_t3",
+            "Geometry.sil_2_slim_armor"
+          ]
+        }
+      },
+      "geometry": "Array.sil[math.mod(math.floor(query.property('npcstudio:flags') / 128), 4) * 10 + (query.property('npcstudio:slim') ? 5 : 0) + (math.mod(math.floor(query.property('npcstudio:flags') / 1024), 2) == 1 ? 4 : math.mod(math.floor(query.property('npcstudio:flags') / 16384), 2) * 2 + math.mod(math.floor(query.property('npcstudio:flags') / 32768), 2))]",
+      "materials": [
+        {
+          "*": "Material.outline_sil"
+        }
+      ],
+      "textures": [
+        "Texture.outline_sil"
+      ],
+      "ignore_lighting": true
+    },
+    "controller.render.npcstudio.custom_model": {
+      "arrays": {
+        "textures": {
+          "Array.tex": [
+            "Texture.custom_model1",
+            "Texture.custom_model2",
+            "Texture.custom_model3",
+            "Texture.custom_model4",
+            "Texture.custom_model5",
+            "Texture.custom_model6",
+            "Texture.custom_model7",
+            "Texture.custom_model8",
+            "Texture.custom_model9",
+            "Texture.custom_model10"
+          ]
+        },
+        "geometries": {
+          "Array.geo": [
+            "Geometry.custom_model1",
+            "Geometry.custom_model2",
+            "Geometry.custom_model3",
+            "Geometry.custom_model4",
+            "Geometry.custom_model5",
+            "Geometry.custom_model6",
+            "Geometry.custom_model7",
+            "Geometry.custom_model8",
+            "Geometry.custom_model9",
+            "Geometry.custom_model10"
+          ]
+        }
+      },
+      "geometry": "Array.geo[query.property('npcstudio:skin_index') - 32]",
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "textures": [
+        "Array.tex[query.property('npcstudio:skin_index') - 32]"
+      ]
+    },
+    "controller.render.npcstudio.custom_model_bright": {
+      "arrays": {
+        "textures": {
+          "Array.tex": [
+            "Texture.custom_model1",
+            "Texture.custom_model2",
+            "Texture.custom_model3",
+            "Texture.custom_model4",
+            "Texture.custom_model5",
+            "Texture.custom_model6",
+            "Texture.custom_model7",
+            "Texture.custom_model8",
+            "Texture.custom_model9",
+            "Texture.custom_model10"
+          ]
+        },
+        "geometries": {
+          "Array.geo": [
+            "Geometry.custom_model1",
+            "Geometry.custom_model2",
+            "Geometry.custom_model3",
+            "Geometry.custom_model4",
+            "Geometry.custom_model5",
+            "Geometry.custom_model6",
+            "Geometry.custom_model7",
+            "Geometry.custom_model8",
+            "Geometry.custom_model9",
+            "Geometry.custom_model10"
+          ]
+        }
+      },
+      "geometry": "Array.geo[query.property('npcstudio:skin_index') - 32]",
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "textures": [
+        "Array.tex[query.property('npcstudio:skin_index') - 32]"
+      ],
+      "ignore_lighting": true
+    },
+    "controller.render.npcstudio.mob": {
+      "arrays": {
+        "textures": {
+          "Array.tex": [
+            "Texture.mob_zombie",
+            "Texture.mob_husk",
+            "Texture.mob_drowned",
+            "Texture.mob_skeleton",
+            "Texture.mob_wither_skeleton",
+            "Texture.mob_enderman",
+            "Texture.mob_creeper",
+            "Texture.mob_wandering_trader",
+            "Texture.mob_witch",
+            "Texture.mob_pillager",
+            "Texture.mob_vindicator",
+            "Texture.mob_evoker",
+            "Texture.mob_piglin",
+            "Texture.mob_piglin_brute",
+            "Texture.mob_zombified_piglin",
+            "Texture.mob_vex",
+            "Texture.mob_iron_golem",
+            "Texture.mob_warden",
+            "Texture.mob_allay",
+            "Texture.mob_cow",
+            "Texture.mob_mooshroom",
+            "Texture.mob_pig",
+            "Texture.mob_wolf",
+            "Texture.mob_fox",
+            "Texture.mob_horse",
+            "Texture.mob_camel",
+            "Texture.mob_spider",
+            "Texture.mob_axolotl",
+            "Texture.mob_frog"
+          ]
+        },
+        "geometries": {
+          "Array.geo": [
+            "Geometry.mob_zombie",
+            "Geometry.mob_husk",
+            "Geometry.mob_drowned",
+            "Geometry.mob_skeleton",
+            "Geometry.mob_wither_skeleton",
+            "Geometry.mob_enderman",
+            "Geometry.mob_creeper",
+            "Geometry.mob_wandering_trader",
+            "Geometry.mob_witch",
+            "Geometry.mob_pillager",
+            "Geometry.mob_vindicator",
+            "Geometry.mob_evoker",
+            "Geometry.mob_piglin",
+            "Geometry.mob_piglin_brute",
+            "Geometry.mob_zombified_piglin",
+            "Geometry.mob_vex",
+            "Geometry.mob_iron_golem",
+            "Geometry.mob_warden",
+            "Geometry.mob_allay",
+            "Geometry.mob_cow",
+            "Geometry.mob_mooshroom",
+            "Geometry.mob_pig",
+            "Geometry.mob_wolf",
+            "Geometry.mob_fox",
+            "Geometry.mob_horse",
+            "Geometry.mob_camel",
+            "Geometry.mob_spider",
+            "Geometry.mob_axolotl",
+            "Geometry.mob_frog"
+          ]
+        },
+        "materials": {
+          "Array.mat": [
+            "Material.default",
+            "Material.mob_glow"
+          ]
+        }
+      },
+      "geometry": "Array.geo[query.property('npcstudio:skin_index') - 42]",
+      "materials": [
+        {
+          "*": "Array.mat[(query.property('npcstudio:skin_index') == 47 || query.property('npcstudio:skin_index') == 68)]"
+        }
+      ],
+      "textures": [
+        "Array.tex[query.property('npcstudio:skin_index') - 42]"
+      ]
+    },
+    "controller.render.npcstudio.mob_bright": {
+      "arrays": {
+        "textures": {
+          "Array.tex": [
+            "Texture.mob_zombie",
+            "Texture.mob_husk",
+            "Texture.mob_drowned",
+            "Texture.mob_skeleton",
+            "Texture.mob_wither_skeleton",
+            "Texture.mob_enderman",
+            "Texture.mob_creeper",
+            "Texture.mob_wandering_trader",
+            "Texture.mob_witch",
+            "Texture.mob_pillager",
+            "Texture.mob_vindicator",
+            "Texture.mob_evoker",
+            "Texture.mob_piglin",
+            "Texture.mob_piglin_brute",
+            "Texture.mob_zombified_piglin",
+            "Texture.mob_vex",
+            "Texture.mob_iron_golem",
+            "Texture.mob_warden",
+            "Texture.mob_allay",
+            "Texture.mob_cow",
+            "Texture.mob_mooshroom",
+            "Texture.mob_pig",
+            "Texture.mob_wolf",
+            "Texture.mob_fox",
+            "Texture.mob_horse",
+            "Texture.mob_camel",
+            "Texture.mob_spider",
+            "Texture.mob_axolotl",
+            "Texture.mob_frog"
+          ]
+        },
+        "geometries": {
+          "Array.geo": [
+            "Geometry.mob_zombie",
+            "Geometry.mob_husk",
+            "Geometry.mob_drowned",
+            "Geometry.mob_skeleton",
+            "Geometry.mob_wither_skeleton",
+            "Geometry.mob_enderman",
+            "Geometry.mob_creeper",
+            "Geometry.mob_wandering_trader",
+            "Geometry.mob_witch",
+            "Geometry.mob_pillager",
+            "Geometry.mob_vindicator",
+            "Geometry.mob_evoker",
+            "Geometry.mob_piglin",
+            "Geometry.mob_piglin_brute",
+            "Geometry.mob_zombified_piglin",
+            "Geometry.mob_vex",
+            "Geometry.mob_iron_golem",
+            "Geometry.mob_warden",
+            "Geometry.mob_allay",
+            "Geometry.mob_cow",
+            "Geometry.mob_mooshroom",
+            "Geometry.mob_pig",
+            "Geometry.mob_wolf",
+            "Geometry.mob_fox",
+            "Geometry.mob_horse",
+            "Geometry.mob_camel",
+            "Geometry.mob_spider",
+            "Geometry.mob_axolotl",
+            "Geometry.mob_frog"
+          ]
+        },
+        "materials": {
+          "Array.mat": [
+            "Material.default",
+            "Material.mob_glow"
+          ]
+        }
+      },
+      "geometry": "Array.geo[query.property('npcstudio:skin_index') - 42]",
+      "materials": [
+        {
+          "*": "Array.mat[(query.property('npcstudio:skin_index') == 47 || query.property('npcstudio:skin_index') == 68)]"
+        }
+      ],
+      "textures": [
+        "Array.tex[query.property('npcstudio:skin_index') - 42]"
+      ],
+      "ignore_lighting": true
+    }
+  }
+}

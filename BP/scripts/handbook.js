@@ -1,0 +1,320 @@
+/**
+ * NPC Studio — handbook.js : the in-game manual (the "NPC Studio Handbook" item).
+ * Menus only show short names; this book explains what every feature does.
+ * Copyright (c) 2026 NoxeelMC. Licensed under GPL-3.0-or-later: see LICENSE and NOTICE.md.
+ */
+import { menu, ICON, sfx } from "./core.js";
+
+const P = (icon, title, lines) => ({ icon, title, text: lines.join("\n") });
+
+export const CHAPTERS = [
+  {
+    name: "New In V3",
+    icon: "layers",
+    pages: [
+      P("outline", "The Studio Panel", [
+        "Everything now lives in one panel on the left with six tabs:",
+        "§bDisplay§f — skin, size, wardrobe, cape, name tag",
+        "§bPose§f — Pose Mode, exact sliders, library, undo",
+        "§bPresets§f — presets, scenes, crowds, props, tools",
+        "§bWorld§f — time, weather, Depth Fog, studio rules",
+        "§bCamera§f — Fly Cam, cameras, Peek, shots",
+        "§bLayers§f — green screen, hide/show, Photo Mode",
+        "",
+        "§7Checkboxes flip with one tap. The X closes the panel so you can move."
+      ]),
+      P("scale", "Sliders In The Panel", [
+        "Size, pose, Trim Studio, time, fog and the camera lens are rows in the panel: §b-§f and §b+§f change the value, §b<§f and §b>§f step through choices.",
+        "",
+        "§7The NPC changes right away and the panel stays on the left, so you see the result on the right. Tap a value box to type an exact number.",
+        "§7Pose tab: pick the part, pick the step (Fine, Normal, Big), then Tilt, Turn, Roll and Move."
+      ]),
+      P("manage", "Panel: sections and columns", [
+        "One section is open at a time: tap a section name to open it, the others fold. Everything fits without scrolling.",
+        "Short buttons sit two in a row. The HUD stays hidden while you work in the panel and comes back when you close it.",
+        "§7/npcstudio:debug shows a grey line in chat for every menu tap (for bug reports)."
+      ]),
+      P("skin", "Display tab, like the Java editor", [
+        "§bModel settings§f: Classic / Slim / Mob Props, Skin, Mob, 3D model, Cloak, Nametag, §bSneak§f, §bLiving§f (breathing), Animation.",
+        "§bInventory§f: the six slots, Item State, Wardrobe, Trim Studio.",
+        "§bTransform§f: Position, Rotation X / Y / Z, Scale, §bCome To Me§f (the NPC jumps to you), §bLook Where I Look§f (its head copies your view), and Look: §bAt me§f turns the NPC to you once, §bHead§f keeps its head following players, §bFlip§f turns it around.",
+        "§bEffects§f: NPC Bright and §bOn Fire§f (flames, no damage).",
+        "§7World tab: Gamerules and Lighting (World Bright = you see everything fully lit). Camera tab: Guide Off / Thirds / Cross. Cameras also sit in the strip on the right."
+      ]),
+      P("sliders", "Live Editor (no reload)", [
+        "Panel > §bLive Editor§f: one screen that stays open. Toggles, sliders and lists change the NPC the moment you touch them.",
+        "Pick a tab at the top (Display, Pose, World, Camera, Layers). §bOpen the Studio panel§f at the bottom goes back.",
+        "§7Display tab > §bBaton opens Live Editor§7 makes it the first thing you see when you tap an NPC."
+      ]),
+      P("paste", "Share presets", [
+        "§bAny device:§f Presets > a preset > §bShare Code§f. Copy the code (starts with NPCS1-) and send it. Others tap §bImport Code§f and paste it.",
+        "§bAs a file:§f the Pack Builder website (Presets) turns codes into a preset pack. In a world with that pack: Presets > §bFrom Preset Packs§f.",
+        "§bPC exact copy:§f export the NPC with a Structure Block (Export mode, include entities). The website puts the .mcstructure in a preset pack.",
+        "§7Custom skins, capes and models travel as slot numbers."
+      ]),
+      P("cape", "Cloaks", [
+        "Display > §bCloak§f opens the cape picker: 8 studio capes, 43 Minecraft capes and 7 slots for your own (Pack Builder website > Capes)."
+      ]),
+      P("gizmo", "Pose Mode: walk around", [
+        "Pose tab > §bWalk in Pose Mode§f (on by default): walk, jump and look around while you pose.",
+        "Red / green / blue arrows at the NPC's feet show X, Y and Z. Rings (rotate) or arrows (move) sit on the part you edit.",
+        "§7Hotbar: 1 select (walk and look), 2 rotate, 3 move, 4 axis, 5 undo, 6 reset part, 7 cancel, 9 done.",
+        "§7Walking off: the old frozen mode, sneak = done, jump = cancel."
+      ]),
+      P("crowd", "Posable Mobs", [
+        "Spawn NPC > §bChoose Mob And Spawn§f (or Mob Props > Posable Mobs): a zombie, creeper, warden, horse, wolf, spider and 23 more, with Minecraft's own look.",
+        "They pose part by part like an NPC: Pose tab, Pose Mode, the Live Editor, presets and animations all work. Part names follow the mob (a cow has front and back legs).",
+        "§7Turn any NPC into a mob: Display > §bMob§f. Tap the x to go back to its skin.",
+        "§7Mobs we couldn't make look exactly right stay normal Mob Props."
+      ]),
+      P("equip", "Item State & Hold", [
+        "Give the NPC a bow, crossbow, trident, shield, spyglass or goat horn, then Display > Inventory > §bItem State§f.",
+        "Any other item, also from other add-ons (guns, staffs): Display > Inventory > §bHold§f: At side, Hold up, Aim (one hand), Aim (two hands), Ready, On shoulder.",
+        "§fBow§7: Idle, Pull 1-3 · §fCrossbow§7: Empty, Loading 1-3, Charged, Firework · §fTrident§7: Hold, Raise · §fShield§7: Hold, Block · §fSpyglass§7: Hold, Look · §fGoat Horn§7: Hold, Play",
+        "§7The arms move into place; bows and crossbows also show their real pulling / charged picture."
+      ]),
+      P("fog", "Depth Map", [
+        "A depth pass like Java depth shaders: near = white, far = black, sky black.",
+        "",
+        "1. Optional: the §bNPC Studio Depth Map§f resource pack (separate download, above NPC Studio) turns every texture white. Without it you still get the black sky and the fade.",
+        "2. Studio panel > Layers > §bDepth map§f (or /npcstudio:depth).",
+        "   §bStart§f: white until this distance. §bMax dist.§f: how long the fade to black is (like DMS, in chunks).",
+        "   §bGround fog§f: soft white fog lying on the ground (Off, Light, Medium, Strong).",
+        "3. Film or take the screenshot. Turn Depth map off and the pack off to go back.",
+        "§7The sky turns black (a big black box follows your view). Bedrock add-ons can't run real shaders, so this is built from white textures + black fog."
+      ]),
+      P("trim", "Trim Studio (Fitting Room)", [
+        "The camera moves close to the NPC. Change pattern, material, armor and glint and see each change on the NPC immediately.",
+        "§7'Turn view' walks the camera around the NPC. Done or X puts your camera back."
+      ]),
+      P("outline", "Cyan Outline", [
+        "The NPC you're editing gets a cyan outline that every player sees, so you always know which one is selected.",
+        "",
+        "§7Outlines hide automatically while anyone is filming. §fPresets > Select All Nearby§7 selects many NPCs at once."
+      ]),
+      P("camera", "Pyramid Cameras", [
+        "Cameras are drawn as a lens point joined to a frame. The frame shows the camera's real shot size: a narrow FOV makes a small frame.",
+        "",
+        "§aGreen§f = your selected camera, §9blue§f = others, §7grey§f = locked."
+      ]),
+      P("monitor", "Peek (Preview Viewer)", [
+        "Tap with the §bPreview Viewer§f: your screen becomes the selected camera.",
+        "§7• Tap again: next camera  • Double-tap sneak or §f/exitcam§7: back to you",
+        "",
+        "§7The thirds guide helps framing (Camera tab switch). It never shows in Photo Mode."
+      ]),
+      P("fog", "Depth Fog", [
+        "Far things fade into a colour while close things stay sharp. Gives depth and makes NPCs stand out.",
+        "",
+        "§78 looks (white, black, haze, sunset, night, horror, dream, smoke) and 9 distances. Only you see it."
+      ]),
+      P("photo", "Photo Mode", [
+        "3-2-1, then the HUD, your hand, outlines, cameras and name tags disappear and the screen flashes.",
+        "§fTake your device screenshot§7 (phone: power + volume down). Tap the screen to come back.",
+        "",
+        "§7Add-ons can't save pictures by themselves, so the screenshot is yours to take."
+      ]),
+      P("backdrop", "Green Screen & Layers", [
+        "§bGreen Screen§f puts a flat green box around your scene. Remove the green in any editor (CapCut, PicsArt, Photopea) for a clean NPC picture.",
+        "",
+        "§bLayer Shot§f takes 3 photos from the same camera: full shot, NPCs on green, background only. They line up perfectly.",
+        "§7Use a flat area: blocks between camera and NPC still show."
+      ]),
+      P("prop", "Block, Item & Particle Props", [
+        "§fBlock & Item Props§7: a floating block or item you move, turn (Display > Turn The Prop) and scale.",
+        "§fParticle Props§7: a spot that keeps playing fire, smoke, hearts, sparks..."
+      ]),
+      P("crowd", "Crowds & Scenes", [
+        "§fMake A Crowd§7 copies the selected NPC into a grid, line, circle or random scatter, with random turns and poses.",
+        "§fScene Presets§7 save everything around you (NPCs, mobs, props, cameras) and place it anywhere."
+      ]),
+      P("tools", "New Tools", [
+        "§bNPC Stamp§f — tap an NPC to copy, tap a block to paste.",
+        "§bNPC Rotator§f — tap an NPC to make it face you.",
+        "§bTeleporter§f — go where you look.",
+        "§7Get them in Presets > Studio Tools."
+      ]),
+      P("cape", "Capes, Name Tags, NPC Bright", [
+        "§fCape§7: 8 capes for any NPC.",
+        "§fName Tag§7: colour, bold, or hide it.",
+        "§fNPC Bright§7: the NPC stays fully lit in dark scenes."
+      ])
+    ]
+  },
+  {
+    name: "Getting Started",
+    icon: "debug",
+    pages: [
+      P("spawn", "Your Tools", [
+        "§bDirector's Baton§f — your main tool.",
+        "§7• Tap / right-click the air: the Studio Panel.",
+        "§7• Tap an NPC: select it and edit it in the panel.",
+        "§7• Hit an NPC: cycle quick poses.",
+        "",
+        "§bCine Camera§f — place cameras and fly the camera.",
+        "§bPreview Viewer§f — peek through your cameras.",
+        "§bBeast Whistle§f — spawn animals and mobs as props.",
+        "§bHandbook§f — this book.",
+        "",
+        "§7Lost a tool? Type §f/npc§7 for the menu."
+      ]),
+      P("spawn", "Spawn NPC", [
+        "Choose how many NPCs, then pick a skin by its face.",
+        "",
+        "§7More than one spawns a neat grid in front of you, all facing you."
+      ]),
+      P("manage", "Edit An NPC", [
+        "Opens the NPC you're looking at, or a list of nearby NPCs with their faces.",
+        "",
+        "§7Everything about one NPC lives here: pose, wardrobe, skin, size, animation, riding, shots, clone and save."
+      ])
+    ]
+  },
+  {
+    name: "Posing",
+    icon: "gizmo",
+    pages: [
+      P("gizmo", "Pose Mode (Gizmo)", [
+        "Your hotbar turns into a toolbar:",
+        "§e1 Select§f — just look at a body part to pick it.",
+        "§b2 Rotate§f / §63 Move§f — look around to turn or move it.",
+        "§f4 Axis§f — Free, or lock to §cX§f, §aY§f or §9Z§f.",
+        "§f5 Undo  6 Reset part  9 Done",
+        "",
+        "§aSneak§f = done, §cJump§f = cancel everything.",
+        "§7The live numbers show in the top-right corner. Your hotbar items come back when you finish."
+      ]),
+      P("pose_preset", "Pose Library", [
+        "45+ ready poses in 5 groups: Basic, Action, Sit & Lie, Emotes, Fun.",
+        "",
+        "§7Pick one, then fine-tune it in Pose Mode."
+      ]),
+      P("save", "My Saved Poses", ["Save the current pose under a name and put it on any NPC later (also mirrored)."]),
+      P("mirror", "Mirror / Copy / Paste", ["§fMirror§7 swaps left and right.", "§fCopy§7 a pose, open another NPC, §fPaste§7."]),
+      P("undo", "Undo & Redo", ["Up to 40 steps per NPC. Works for poses, sizes and Pose Mode."]),
+      P("scale", "Size / Height", ["§fPlayer Size§7 makes the NPC exactly as tall as you.", "§7Baby, giant, or any size from 10% to 500%."]),
+      P("sliders", "Advanced", ["Exact number sliders, a nudge pad with buttons, and Pose Mode speed / snapping."])
+    ]
+  },
+  {
+    name: "Wardrobe",
+    icon: "equip",
+    pages: [
+      P("copy_outfit", "Copy My Outfit", [
+        "Gives the NPC exact copies of the armor and items you're wearing — §fenchantments and trims included§7.",
+        "",
+        "§7Stand 3+ blocks away so the NPC can pick them up."
+      ]),
+      P("equip", "Give Item In My Hand", ["Exact copy of the item you're holding. It goes to the right slot by itself.", "", "§7Shortcut: sneak + tap an NPC while holding an item."]),
+      P("trim", "Trim Studio", ["Add armor trims from a menu: pattern, colour, armor type and optional glint.", "", "§7Pick which pieces to trim."]),
+      P("enchant", "Enchant / Quick Glint", ["Choose enchantments and levels, or add a quick shiny glint."]),
+      P("armor_set", "Full Armor Sets", ["Leather to Netherite in one tap, plus a glinting netherite set."])
+    ]
+  },
+  {
+    name: "Skins",
+    icon: "skin",
+    pages: [
+      P("skin", "Skins & Arms", ["12 premade skins and 20 custom slots, each shown by its face.", "", "§fArm Model§7: Classic (Steve) or Slim (Alex)."]),
+      P("custom", "Your Own Skins", [
+        "Minecraft only loads pictures from resource packs, so custom skins come in a small pack:",
+        "§71. Open the §fSkin Pack Builder§7 web page.",
+        "§72. Pick up to 20 PNG skins and name them.",
+        "§73. Download, open with Minecraft, activate it §fabove§7 NPC Studio.",
+        "",
+        "§7Your skins appear in Custom Slots with their names and faces."
+      ])
+    ]
+  },
+  {
+    name: "Animation",
+    icon: "animate",
+    pages: [
+      P("animate", "Looping Animations", ["19 loops on top of any pose: breathing, walking, running, jumping, waving, talking, dancing, clapping, push-ups and more."]),
+      P("record", "Keyframe Animator", [
+        "Pose and place the NPC, §fAdd Keyframe§7, change it, add another… then §fPlay§7.",
+        "",
+        "§fRecord My Movement§7: walk a path and the NPC replays it."
+      ]),
+      P("eye", "Look At Players", ["The NPC's head follows the nearest player."]),
+      P("play", "Play All Animations", ["Main menu: start every NPC's keyframes at once, for a whole scene."])
+    ]
+  },
+  {
+    name: "Riding & Mobs",
+    icon: "ride",
+    pages: [
+      P("ride", "Ride a Mob", ["Seat an NPC on any mob: horses, camels, wolves — even a warden.", "", "§7Nudge the seat, sit sideways or stand on it (surfing)."]),
+      P("pose_preset", "Mob Poses", ["Horses rear up or hold their head high. Wolves, cats, foxes, pandas and camels sit. Allays dance, wardens roar.", "", "§7Riders lean back with a rearing horse."]),
+      P("freeze", "Beast Whistle", ["Spawn mob props. They're named (never despawn) and frozen in place.", "", "§7Tap a mob to freeze, ride, pose or put an NPC on it."])
+    ]
+  },
+  {
+    name: "Camera",
+    icon: "camera",
+    pages: [
+      P("flycam", "Fly Cam", [
+        "Become an invisible flying camera. Fly with your joystick; the view glides like a drone.",
+        "§f• Tap the screen§7 to lock the shot.",
+        "§f• Tap again§7 to leave camera view.",
+        "§f• Hotbar§7 = zoom.",
+        "",
+        "§fFly Cam Path§7: tap to drop points, double-tap to finish."
+      ]),
+      P("camera", "Cameras", ["Placed cameras you can look through, move, zoom, aim at an NPC, follow a mob, shake, or animate along a smooth path."]),
+      P("film", "Cinematic Shots", ["30 automatic camera moves: orbits, dolly zoom, crane, drone fly-by, over-the-shoulder, duel shots…", "", "§7Choose NPC, length, distance, height and lens."]),
+      P("sequence", "Shot Sequence", ["Line up shots and play them back-to-back with fades, like an edited video."]),
+      P("exit", "Leaving Camera View", [
+        "§fTap the screen§7 (right-click on PC).",
+        "",
+        "§7Backups: double-tap sneak, §f/exitcam§7, or §f/npcstudio:exit§7.",
+        "§7No text appears while you film."
+      ])
+    ]
+  },
+  {
+    name: "Scenes & Tools",
+    icon: "bulkequip",
+    pages: [
+      P("clone", "Clone", ["An exact copy next to the original, gear and trims included."]),
+      P("preset", "Presets", ["Save an NPC as a preset. Spawn exact copies later, apply it to one NPC, or to a whole crowd."]),
+      P("bulkequip", "Bulk Tools", ["Change many NPCs at once: gear, trims, poses, animations, size, face me, look at players, delete."]),
+      P("world", "World Controls", ["Time of day, freeze time, weather and weather lock."]),
+      P("lock", "Lock", ["Protect a finished NPC from accidental edits."])
+    ]
+  },
+  {
+    name: "Commands",
+    icon: "custom",
+    pages: [
+      P("custom", "Commands", [
+        "§f/npc§7 — main menu",
+        "§f/cameras§7 — camera menu",
+        "§f/exitcam§7 — leave camera view",
+        "§f/lockcam§7 — lock a Fly Cam shot / finish a path",
+        "",
+        "§7If a command isn't found, add the prefix: §f/npcstudio:npc"
+      ])
+    ]
+  }
+];
+
+export function openHandbook(player, back) {
+  sfx(player, "open");
+  const m = menu("§lNPC Studio V3 Handbook", "§7Tap a chapter to see what each feature does.");
+  for (const ch of CHAPTERS) m.btn(ch.name, ICON(ch.icon), () => openChapter(player, ch, () => openHandbook(player, back)));
+  if (back) m.back(back);
+  m.show(player);
+}
+
+function openChapter(player, ch, back) {
+  sfx(player, "open");
+  const m = menu(ch.name);
+  for (const p of ch.pages) m.btn(p.title, ICON(p.icon), () => openPage(player, p, () => openChapter(player, ch, back)));
+  m.back(back).show(player);
+}
+
+function openPage(player, p, back) {
+  sfx(player, "open");
+  menu(p.title, p.text).back(back).show(player);
+}

@@ -1,0 +1,522 @@
+/**
+ * NPC Studio — npc.js : spawning, cloning, presets, look-at-player, and the main menus.
+ * Copyright (c) 2026 NoxeelMC. Licensed under GPL-3.0-or-later: see LICENSE and NOTICE.md.
+ */
+import { StructureSaveMode } from "@minecraft/server";
+import {
+  world, system, menu, modal, msg, confirm, ICON, NPC_ID, NPC_FAMILY, clamp, wrapDeg, toDeg,
+  getJson, setJson, isLocked, npcsNear, npcLabel, forward, right
+} from "./core.js";
+import { readPose, applyPose, pushUndo, getScale, setScale, getAnim, setAnim, getRot, setRot, expandPreset } from "./rig.js";
+import { ALL_POSES, LOOP_ANIMS } from "./poses.js";
+import { openPoseEditor, openPoseLibrary, openScaleMenu, openLoopAnims } from "./poseEditor.js";
+import { openWardrobe, openBulkWardrobe, readAllEquip, applyEquipInfo, SLOTS } from "./wardrobe.js";
+import { pickSkin, setSkin, skinPlainName, npcHead, pickMob, headIcon, MOB_FIRST } from "./skins.js";
+import { openAnimator, playAllTimelines, stopAllTimelines, getTimeline } from "./animator.js";
+import { openShotsMenu } from "./shots.js";
+import { openRideMenu, isMounted } from "./mount.js";
+import { openHandbook } from "./handbook.js";
+import { openCameraToolMenu, flyCam } from "./camera.js";
+import { openStudio, openStudioFor } from "./panel.js";
+import { presetToCode, codeToPreset, packPresets, callPresetPacks, packStructures } from "./share.js";
+import { getCape, setCape, isBright, setBright } from "./selection.js";
+
+// ---------- spawning ----------
+function initNpc(npc, skin, rot, name) {
+  npc.setRotation({ x: 0, y: rot.y });
+  setSkin(npc, skin);
+  applyPose(npc, {});
+  npc.nameTag = name;
+}
+
+export function spawnNpcs(player, skin, count) {
+  const rot = player.getRotation();
+  const f = forward(rot.y);
+  const r = right(rot.y);
+  const cols = Math.ceil(Math.sqrt(count));
+  const base = { x: player.location.x + f.x * 2, y: player.location.y, z: player.location.z + f.z * 2 };
+  for (let i = 0; i < count; i++) {
+    const row = Math.floor(i / cols);
+    const col = i % cols - (cols - 1) / 2;
+    const loc = count === 1 ? base : { x: base.x + r.x * col * 1.5 + f.x * row * 1.5, y: base.y, z: base.z + r.z * col * 1.5 + f.z * row * 1.5 };
+    const npc = player.dimension.spawnEntity(NPC_ID, loc);
+    // face the player
+    initNpc(npc, skin, { y: rot.y + 180 }, count === 1 ? `${skinPlainName(skin)}` : `${skinPlainName(skin)} ${i + 1}`);
+  }
+  msg(player, `§aSpawned ${count} NPC${count > 1 ? "s" : ""}.`);
+}
+
+// ---------- exact copies via structures (keeps enchants, trims, everything) ----------
+function blockOf(loc) {
+  return { x: Math.floor(loc.x), y: Math.floor(loc.y), z: Math.floor(loc.z) };
+}
+
+function structureCopy(npc, id, mode) {
+  const b = blockOf(npc.location);
+  try {
+    world.structureManager.delete(id);
+  } catch {
+    /* didn't exist */
+  }
+  world.structureManager.createFromWorld(id, npc.dimension, b, b, { includeBlocks: false, includeEntities: true, saveMode: mode });
+}
+
+function placeCopy(id, dimension, atBlock) {
+  const before = new Set([...dimension.getEntities({ families: [NPC_FAMILY], location: { x: atBlock.x + 0.5, y: atBlock.y + 0.5, z: atBlock.z + 0.5 }, maxDistance: 2 })].map((e) => e.id));
+  world.structureManager.place(id, dimension, atBlock, { includeBlocks: false, includeEntities: true });
+  return [...dimension.getEntities({ families: [NPC_FAMILY], location: { x: atBlock.x + 0.5, y: atBlock.y + 0.5, z: atBlock.z + 0.5 }, maxDistance: 2 })].filter((e) => !before.has(e.id));
+}
+
+export function cloneNpc(player, npc) {
+  const r = right(npc.getRotation().y);
+  const b = blockOf(npc.location);
+  const target = { x: b.x + Math.round(r.x * 1.5), y: b.y, z: b.z + Math.round(r.z * 1.5) };
+  try {
+    structureCopy(npc, "npcstudio:clipboard", StructureSaveMode.Memory);
+    const made = placeCopy("npcstudio:clipboard", npc.dimension, target);
+    for (const c of made) {
+      c.nameTag = `${npc.nameTag || "NPC"} (Clone)`;
+      c.setDynamicProperty("npcstudio:timeline", undefined);
+    }
+    if (made.length) return msg(player, `§aExact clone made (gear, enchants and trims included).`);
+  } catch (e) {
+    console.warn(`[NPC Studio] structure clone failed, using fallback: ${e}`);
+  }
+  // fallback: rebuild from data
+  const c = npc.dimension.spawnEntity(NPC_ID, { x: target.x + (npc.location.x - b.x), y: npc.location.y, z: target.z + (npc.location.z - b.z) });
+  c.setRotation(npc.getRotation());
+  c.setProperty("npcstudio:skin_index", npc.getProperty("npcstudio:skin_index"));
+  c.setProperty("npcstudio:slim", npc.getProperty("npcstudio:slim"));
+  applyPose(c, readPose(npc));
+  setScale(c, getScale(npc));
+  setAnim(c, getAnim(npc));
+  c.nameTag = `${npc.nameTag || "NPC"} (Clone)`;
+  const eq = readAllEquip(npc);
+  for (const { key } of SLOTS) if (eq[key]) applyEquipInfo(c, key, eq[key]);
+  msg(player, "§aCloned.");
+}
+
+// ---------- presets ----------
+const PRESET_PREFIX = "npcstudio:preset:";
+const structId = (name) => `npcstudio:preset_${name.toLowerCase().replace(/[^a-z0-9_]/g, "_").slice(0, 40)}`;
+export function listPresets() {
+  return world.getDynamicPropertyIds().filter((k) => k.startsWith(PRESET_PREFIX)).map((k) => k.slice(PRESET_PREFIX.length)).sort();
+}
+
+export function savePreset(player, npc, name) {
+  const data = {
+    v: 3,
+    skinIndex: npc.getProperty("npcstudio:skin_index"),
+    slim: npc.getProperty("npcstudio:slim"),
+    pose: readPose(npc),
+    scale: getScale(npc),
+    anim: getAnim(npc),
+    nameTag: npc.nameTag,
+    equip: readAllEquip(npc),
+    cape: getCape(npc),
+    bright: isBright(npc)
+  };
+  let exact = false;
+  try {
+    structureCopy(npc, structId(name), StructureSaveMode.World);
+    data.struct = structId(name);
+    exact = true;
+  } catch (e) {
+    console.warn(`[NPC Studio] preset structure save failed: ${e}`);
+  }
+  setJson(world, PRESET_PREFIX + name, data);
+  msg(player, `§aSaved preset "${name}"${exact ? " §7(+ exact copy with enchants & trims)" : ""}.`);
+}
+
+export function applyPreset(npc, name) {
+  const d = getJson(world, PRESET_PREFIX + name, undefined);
+  return d ? applyPresetData(npc, d) : false;
+}
+
+/** Apply preset data (saved here, from a share code or from a preset pack). */
+export function applyPresetData(npc, d) {
+  npc.setProperty("npcstudio:skin_index", d.skinIndex ?? 0);
+  if (d.slim !== undefined) npc.setProperty("npcstudio:slim", !!d.slim);
+  applyPose(npc, d.pose ?? {});
+  if (d.scale) setScale(npc, d.scale);
+  setAnim(npc, d.anim ?? 0);
+  if (d.nameTag) npc.nameTag = d.nameTag;
+  const eq = d.equip ?? Object.fromEntries(Object.entries(d.equipment ?? {}).map(([k, v]) => [k, v ? { id: v } : null]));
+  for (const { key } of SLOTS) applyEquipInfo(npc, key, eq[key]);
+  if (d.cape !== undefined) setCape(npc, d.cape);
+  if (d.bright !== undefined) setBright(npc, !!d.bright);
+  return true;
+}
+
+// ---------- sharing ----------
+function spawnFromData(player, d) {
+  const rot = player.getRotation();
+  const f = forward(rot.y);
+  const npc = player.dimension.spawnEntity(NPC_ID, { x: player.location.x + f.x * 2, y: player.location.y, z: player.location.z + f.z * 2 });
+  npc.setRotation({ x: 0, y: rot.y + 180 });
+  applyPresetData(npc, d);
+  return npc;
+}
+function shareCode(player, name, back) {
+  const d = getJson(world, PRESET_PREFIX + name, undefined);
+  if (!d) return back();
+  const code = presetToCode(name, d);
+  modal(`Share "${name}"`)
+    .text("code", `§7Select all the text in the box and copy it (${code.length} characters). Others paste it in §bPresets > Import Code§7.`, code, code)
+    .submit("Done")
+    .show(player, () => back(), back);
+}
+function importCode(player, back) {
+  modal("Import Code")
+    .text("code", "Paste an NPC Studio code (starts with NPCS1-)", "NPCS1-...")
+    .text("name", "Save as (empty = the code's own name)", "")
+    .submit("Import")
+    .show(player, (v) => {
+      try {
+        const p = codeToPreset(v.code);
+        let name = String(v.name ?? "").trim() || p.title;
+        name = name.replace(/[^\w \-]/g, "").trim().slice(0, 32) || "Shared preset";
+        setJson(world, PRESET_PREFIX + name, p.data);
+        msg(player, `§aImported preset "${name}". It's in your Presets now.`);
+      } catch (e) {
+        msg(player, `§c${e.message}`);
+      }
+      back();
+    }, back);
+}
+function packPresetsMenu(player, back) {
+  const self = () => packPresetsMenu(player, back);
+  const list = packPresets();
+  const files = packStructures();
+  const m = menu("From Preset Packs", list.length || files.length ? "§7Presets from the preset packs active in this world." : "§7No preset packs found. Make one on the Pack Builder website (Presets), activate it in this world, then tap Look again.");
+  for (const p of list)
+    m.btn(p.title, ICON("preset"), () =>
+      menu(p.title)
+        .btn("Spawn Here", ICON("spawn"), () => (spawnFromData(player, p.data), msg(player, `§aSpawned "${p.title}".`)))
+        .btn("Apply To NPC I'm Looking At", ICON("manage"), () => {
+          const npc = getLookedAtNPC(player);
+          if (!npc) return msg(player, "§cLook at an NPC first.");
+          applyPresetData(npc, p.data);
+        })
+        .btn("Save To My Presets", ICON("save"), () => (setJson(world, PRESET_PREFIX + p.title, p.data), msg(player, `§aSaved "${p.title}".`), self()))
+        .back(self)
+        .show(player)
+    );
+  for (const id of files)
+    m.btn(`${id.split(":")[1]} §b(file)`, ICON("spawn"), () => {
+      const rot = player.getRotation();
+      const f = forward(rot.y);
+      try {
+        const made = placeCopy(id, player.dimension, blockOf({ x: player.location.x + f.x * 2, y: player.location.y, z: player.location.z + f.z * 2 }));
+        made.forEach((n) => n.setRotation({ x: 0, y: rot.y + 180 }));
+        msg(player, made.length ? `§aSpawned ${made.length} NPC(s) from ${id}.` : "§eThat file has no NPC in it.");
+      } catch (e) {
+        msg(player, `§cCouldn't place ${id}: ${e}`);
+      }
+    });
+  m.btn("Look Again", ICON("refresh"), () => (callPresetPacks(), system.runTimeout(self, 8)));
+  m.btn("How To Share Presets", ICON("debug"), () => shareHelp(player, self));
+  m.back(back).show(player);
+}
+function shareHelp(player, back) {
+  menu(
+    "Share Presets",
+    [
+      "§bAny device:§f Presets > a preset > §bShare code§f. Copy the code from the box and send it. The other player taps §bImport code§f and pastes it.",
+      "",
+      "§bAs a file:§f paste codes on the Pack Builder website (Presets tab) and download a preset pack. Anyone who adds that pack to a world gets the presets in §bFrom preset packs§f.",
+      "",
+      "§bPC exact copy:§f place a Structure Block, set it to §bExport§f, frame the NPC and export the .mcstructure. Put it in a behavior pack in §bstructures/npcstudio_presets/§f (the website does it). It keeps every detail.",
+      "",
+      "§7Custom skins, capes and models travel as slot numbers: the other player needs the same skin pack for them to look the same."
+    ].join("\n")
+  )
+    .back(back)
+    .show(player);
+}
+
+function spawnPresetExact(player, name) {
+  const d = getJson(world, PRESET_PREFIX + name, undefined);
+  if (!d?.struct) return false;
+  const rot = player.getRotation();
+  const f = forward(rot.y);
+  const at = blockOf({ x: player.location.x + f.x * 2, y: player.location.y, z: player.location.z + f.z * 2 });
+  try {
+    const made = placeCopy(d.struct, player.dimension, at);
+    made.forEach((m) => m.setRotation({ x: 0, y: rot.y + 180 }));
+    return made.length > 0;
+  } catch (e) {
+    console.warn(`[NPC Studio] preset place failed: ${e}`);
+    return false;
+  }
+}
+
+// ---------- look at nearest player ----------
+const lookers = new Map(); // id -> entity
+const LOOK_KEY = "npcstudio:lookat";
+
+export function setLookAtPlayers(npc, on) {
+  if (on) {
+    npc.setDynamicProperty("npcstudio:head_before_look", JSON.stringify(getRot(npc, "head")));
+    npc.setDynamicProperty(LOOK_KEY, true);
+    lookers.set(npc.id, npc);
+  } else {
+    npc.setDynamicProperty(LOOK_KEY, undefined);
+    lookers.delete(npc.id);
+    const prev = getJson(npc, "npcstudio:head_before_look", [0, 0, 0]);
+    setRot(npc, "head", prev);
+  }
+}
+export function isLooking(npc) {
+  return !!npc.getDynamicProperty(LOOK_KEY);
+}
+
+function rescanLookers() {
+  for (const dimId of ["overworld", "nether", "the_end"]) {
+    try {
+      for (const npc of world.getDimension(dimId).getEntities({ families: [NPC_FAMILY] })) {
+        if (npc.getDynamicProperty(LOOK_KEY)) lookers.set(npc.id, npc);
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
+export function startLookLoop() {
+  system.runTimeout(rescanLookers, 40);
+  system.runInterval(rescanLookers, 200);
+  system.runInterval(() => {
+    for (const [id, npc] of lookers) {
+      if (!npc.isValid) {
+        lookers.delete(id);
+        continue;
+      }
+      const sc = getScale(npc);
+      const head = { x: npc.location.x, y: npc.location.y + 1.52 * sc, z: npc.location.z };
+      let best, bestD = 24 * 24;
+      for (const p of npc.dimension.getPlayers({ location: npc.location, maxDistance: 24 })) {
+        const d = (p.location.x - head.x) ** 2 + (p.location.z - head.z) ** 2;
+        if (d < bestD) {
+          bestD = d;
+          best = p;
+        }
+      }
+      if (!best) continue;
+      const t = best.getHeadLocation();
+      const dx = t.x - head.x, dy = t.y - head.y, dz = t.z - head.z;
+      const bodyY = npc.getProperty("npcstudio:body_y") ?? 0;
+      const yaw = clamp(wrapDeg(toDeg(Math.atan2(-dx, dz)) - npc.getRotation().y - bodyY), -85, 85);
+      const pitch = clamp(-toDeg(Math.atan2(dy, Math.hypot(dx, dz))), -60, 60);
+      const cur = getRot(npc, "head");
+      const nx = cur[0] + (pitch - cur[0]) * 0.4;
+      const ny = cur[1] + (yaw - cur[1]) * 0.4;
+      if (Math.abs(nx - cur[0]) > 0.3 || Math.abs(ny - cur[1]) > 0.3) setRot(npc, "head", [nx, ny, cur[2]]);
+    }
+  }, 2);
+}
+
+/** Head turns to look the same way you look. */
+export function lookAtMyView(npc, player) {
+  const r = player.getRotation();
+  const bodyY = npc.getProperty("npcstudio:body_y") ?? 0;
+  setRot(npc, "head", [clamp(r.x, -80, 80), clamp(wrapDeg(r.y - npc.getRotation().y - bodyY), -85, 85), 0]);
+}
+
+/** The NPC jumps to where you stand and faces the way you face. */
+export function bringToMe(npc, player) {
+  npc.teleport(player.location, { rotation: { x: 0, y: player.getRotation().y } });
+}
+
+// ---------- targeting ----------
+export function getLookedAtNPC(player) {
+  for (const hit of player.getEntitiesFromViewDirection({ maxDistance: 16 })) {
+    if (hit.entity.matches({ families: [NPC_FAMILY] })) return hit.entity;
+  }
+  return undefined;
+}
+
+export function pickNpc(player, title, onPick, back) {
+  const npcs = npcsNear(player, 64).sort((a, b) => a.location.x - b.location.x);
+  if (npcs.length === 0) return msg(player, "§cNo NPCs within 64 blocks.");
+  const m = menu(title);
+  npcs.forEach((n) => m.btn(`${npcLabel(n)}${isLocked(n) ? " §c(locked)" : ""}\n§8${Math.round(Math.hypot(n.location.x - player.location.x, n.location.z - player.location.z))} blocks away`, npcHead(n), () => onPick(n)));
+  if (back) m.back(back);
+  m.show(player);
+}
+
+// =====================================================================================
+// NPC HUB
+// =====================================================================================
+export function openManageMenu(player, npc, back) {
+  if (!npc.isValid) return;
+  openStudioFor(player, npc); // V3: everything about an NPC lives in the Studio panel
+}
+
+export function openMoveMenu(player, npc, back, stepIdx = 1) {
+  if (!npc.isValid) return;
+  const STEPS = [0.1, 0.5, 1, 2];
+  const step = STEPS[stepIdx];
+  const self = () => openMoveMenu(player, npc, back, stepIdx);
+  const go = (fwd, side, upd, turn = 0) => () => {
+    const rot = npc.getRotation();
+    const f = forward(rot.y);
+    const r = right(rot.y);
+    const l = npc.location;
+    npc.teleport({ x: l.x + f.x * fwd + r.x * side, y: l.y + upd, z: l.z + f.z * fwd + r.z * side }, { rotation: { x: 0, y: rot.y + turn } });
+    self();
+  };
+  menu(`Move: ${npcLabel(npc)}`)
+    .btn(`Step: ${step} blocks §8(change)`, ICON("fov"), () => openMoveMenu(player, npc, back, (stepIdx + 1) % STEPS.length))
+    .btn("Bring To Me", ICON("spawn"), () => (bringToMe(npc, player), self()))
+    .btn("Face Me", ICON("eye"), () => {
+      const dx = player.location.x - npc.location.x, dz = player.location.z - npc.location.z;
+      npc.setRotation({ x: 0, y: toDeg(Math.atan2(-dx, dz)) });
+      self();
+    })
+    .btn("Head Looks Where I Look", ICON("eye"), () => {
+      pushUndo(npc);
+      lookAtMyView(npc, player);
+      self();
+    })
+    .btn("Snap To Block Center", ICON("waypoint"), () => {
+      const l = npc.location;
+      npc.teleport({ x: Math.floor(l.x) + 0.5, y: l.y, z: Math.floor(l.z) + 0.5 });
+      self();
+    })
+    .btn("Forward", ICON("move"), go(step, 0, 0))
+    .btn("Back", ICON("move"), go(-step, 0, 0))
+    .btn("Left", ICON("move"), go(0, -step, 0))
+    .btn("Right", ICON("move"), go(0, step, 0))
+    .btn("Up", ICON("move"), go(0, 0, step))
+    .btn("Down", ICON("move"), go(0, 0, -step))
+    .btn("Turn Left 15°", ICON("turn"), go(0, 0, 0, -15))
+    .btn("Turn Right 15°", ICON("turn"), go(0, 0, 0, 15))
+    .btn("Turn Around", ICON("turn"), go(0, 0, 0, 180))
+    .back(back)
+    .show(player);
+}
+
+// =====================================================================================
+// MAIN MENU
+// =====================================================================================
+export function openMainMenu(player) {
+  openStudio(player);
+}
+
+const SPAWN_COUNTS = [1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 25, 30, 40, 50];
+const spawnCount = new Map(); // player.id -> index
+/** Spawn page in the panel: how many, then pick the skin. */
+export function openSpawnMenu(player, back) {
+  const self = () => openSpawnMenu(player, back);
+  const ci = spawnCount.get(player.id) ?? 0;
+  const count = SPAWN_COUNTS[ci];
+  menu("Spawn NPCs", "§7They appear in a grid in front of you")
+    .reopen(self)
+    .section("spawn", "Spawn", ICON("spawn"))
+    .cycle("How many", String(count), (d) => spawnCount.set(player.id, Math.max(0, Math.min(SPAWN_COUNTS.length - 1, ci + d))))
+    .btn("Choose Skin And Spawn", ICON("skin"), () =>
+      pickSkin(player, count > 1 ? `Choose Skin (x${count})` : "Choose Skin", (i) => spawnNpcs(player, i, count), back)
+    )
+    .btn("Choose Mob And Spawn §8(posable)", headIcon(MOB_FIRST), () =>
+      pickMob(player, count > 1 ? `Choose Mob (x${count})` : "Choose Mob", (n) => spawnNpcs(player, MOB_FIRST + n, count), back)
+    )
+    .back(back)
+    .show(player);
+}
+
+export function openPresetsMenu(player, back) {
+  const self = () => openPresetsMenu(player, back);
+  const names = listPresets();
+  const m = menu("Presets", names.length ? "§7Save presets from an NPC's menu. Tap one to use it." : "§7No presets yet. Open an NPC > Save as Preset.");
+  m.btn("Import Code", ICON("paste"), () => importCode(player, self));
+  m.btn(`From Preset Packs (${packPresets().length + packStructures().length})`, ICON("bulkequip"), () => packPresetsMenu(player, self));
+  for (const n of names) {
+    const d = getJson(world, PRESET_PREFIX + n, {});
+    m.btn(`${n}${d.struct ? " §b(exact)" : ""}`, ICON("preset"), () =>
+      menu(n)
+        .btn("Spawn Exact Copy Here §8(with trims & enchants)", ICON("spawn"), () => {
+          if (!spawnPresetExact(player, n)) {
+            const npc = player.dimension.spawnEntity(NPC_ID, player.location);
+            applyPreset(npc, n);
+          }
+          msg(player, `§aSpawned "${n}".`);
+        })
+        .btn("Share Code", ICON("copy_outfit"), () => shareCode(player, n, self))
+        .btn("Apply To NPC I'm Looking At", ICON("manage"), () => {
+          const npc = getLookedAtNPC(player);
+          if (!npc) return msg(player, "§cLook at an NPC first.");
+          applyPreset(npc, n);
+          msg(player, `§aApplied "${n}".`);
+        })
+        .btn("Apply To All Within Radius", ICON("bulkequip"), () =>
+          modal("Radius").slider("r", "Blocks", 5, 100, 5, 20).show(player, ({ r }) => {
+            let c = 0;
+            for (const npc of npcsNear(player, r)) if (!isLocked(npc) && applyPreset(npc, n)) c++;
+            msg(player, `§aApplied to ${c} NPCs.`);
+          })
+        )
+        .btn("§cDelete Preset", ICON("delete"), () => {
+          world.setDynamicProperty(PRESET_PREFIX + n, undefined);
+          try {
+            if (d.struct) world.structureManager.delete(d.struct);
+          } catch {
+            /* ignore */
+          }
+          self();
+        })
+        .back(self)
+        .show(player)
+    );
+  }
+  m.back(back).show(player);
+}
+
+export function openBulkMenu(player, back) {
+  const self = () => openBulkMenu(player, back);
+  const radius = (fn) => () => modal("Radius").slider("r", "Every NPC within (blocks)", 5, 100, 5, 20).show(player, ({ r }) => fn(npcsNear(player, r).filter((n) => !isLocked(n))), self);
+  menu("Bulk Tools", "§7Locked NPCs are always skipped.")
+    .btn("Bulk Wardrobe (gear / trims)", ICON("equip"), () => openBulkWardrobe(player, self))
+    .btn("Bulk Pose", ICON("pose_preset"), radius((npcs) => {
+      const names = Object.keys(ALL_POSES);
+      modal("Bulk Pose").dropdown("p", "Pose", names, 0).toggle("rand", "Also add the Breathing animation", false).show(player, (v) => {
+        for (const n of npcs) {
+          applyPose(n, expandPreset(ALL_POSES[names[v.p]]));
+          if (v.rand) setAnim(n, 1);
+        }
+        msg(player, `§aPosed ${npcs.length} NPCs.`);
+      });
+    }))
+    .btn("Bulk Looping Animation", ICON("animate"), radius((npcs) =>
+      modal("Bulk Animation").dropdown("a", "Animation", ["None", ...LOOP_ANIMS], 0).show(player, (v) => {
+        npcs.forEach((n) => setAnim(n, v.a));
+        msg(player, `§aUpdated ${npcs.length} NPCs.`);
+      })
+    ))
+    .btn("Bulk Look At Players (on/off)", ICON("eye"), radius((npcs) => {
+      const on = !npcs.every(isLooking);
+      npcs.forEach((n) => setLookAtPlayers(n, on));
+      msg(player, `§a${npcs.length} NPCs ${on ? "now look at players" : "stopped looking"}.`);
+    }))
+    .btn("Bulk Face Me", ICON("turn"), radius((npcs) => {
+      for (const n of npcs) {
+        const dx = player.location.x - n.location.x, dz = player.location.z - n.location.z;
+        n.setRotation({ x: 0, y: toDeg(Math.atan2(-dx, dz)) });
+      }
+      msg(player, `§a${npcs.length} NPCs face you.`);
+    }))
+    .btn("Bulk Size", ICON("scale"), radius((npcs) =>
+      modal("Bulk Size").slider("s", "Size %", 10, 500, 5, 94).show(player, ({ s }) => {
+        npcs.forEach((n) => setScale(n, s / 100));
+        msg(player, `§aResized ${npcs.length} NPCs.`);
+      })
+    ))
+    .btn("§cBulk Delete", ICON("delete"), radius((npcs) =>
+      confirm(player, "Delete NPCs?", `Delete ${npcs.length} NPCs? This can't be undone.`, "Delete all", () => {
+        npcs.forEach((n) => n.remove());
+        msg(player, `§aDeleted ${npcs.length} NPCs.`);
+      })
+    ))
+    .back(back)
+    .show(player);
+}

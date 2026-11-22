@@ -1,0 +1,19 @@
+{
+  "materials": {
+    "version": "1.0.0",
+    "npcstudio_outline:entity": {
+      "+states": [
+        "InvertCulling"
+      ],
+      "-states": [
+        "DisableCulling"
+      ]
+    },
+    "npcstudio_gizmo:entity_alphatest": {
+      "depthFunc": "Always",
+      "+states": [
+        "DisableDepthWrite"
+      ]
+    }
+  }
+}

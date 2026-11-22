@@ -1,0 +1,32 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "npcstudio:camera_marker",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "blue": "textures/entity/npcstudio/cam_blue",
+        "green": "textures/entity/npcstudio/cam_green",
+        "grey": "textures/entity/npcstudio/cam_grey"
+      },
+      "geometry": {
+        "default": "geometry.npcstudio.camera"
+      },
+      "animations": {
+        "aim": "animation.npcstudio.camera.aim"
+      },
+      "scripts": {
+        "scale": "query.property('npcstudio:hidden') ? 0.0 : 1.0",
+        "animate": [
+          "aim"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.npcstudio.camera"
+      ],
+      "enable_attachables": false
+    }
+  }
+}

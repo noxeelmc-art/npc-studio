@@ -1,0 +1,608 @@
+/**
+ * NPC Studio V3 — studio.js : Peek, Photo Mode, Layer Shot, green screen and hide/show.
+ *
+ * Peek (Preview Viewer): tap = look through the selected camera, tap again = next camera,
+ *   double-tap sneak / /exitcam = back to you. The action bar shows "‹ Camera 2 ›".
+ * Photo Mode: 3-2-1, then everything disappears (HUD, hand, outlines, cameras, name tags) and the
+ *   screen flashes: take your device screenshot. Tap to come back.
+ * Layer Shot: three photos from the same camera so the layers line up in an editor:
+ *   ① full shot  ② NPCs on a green screen  ③ background without NPCs.
+ * Green screen: a big flat-colour box around the scene (npcstudio:backdrop, drawn from inside).
+ * Add-ons can't take screenshots or save files, so the player presses their device's screenshot.
+ * Copyright (c) 2026 NoxeelMC. Licensed under GPL-3.0-or-later: see LICENSE and NOTICE.md.
+ */
+import { HudVisibility } from "@minecraft/server";
+import { world, system, msg, sfx, actionbar, NPC_FAMILY, MOB_TAG, CAMERA_ID, CAM_PRESET, getJson, setJson, forward, clamp } from "./core.js";
+import { enterCinema, exitCinema, inCinema, hideHud, setCinemaTap } from "./cinema.js";
+import { allCameras, getSelectedCamera, lookThrough, camState, isCamLocked } from "./camera.js";
+import { getSelection, setOutlinesHidden, areOutlinesHidden } from "./selection.js";
+
+const BACKDROP_ID = "npcstudio:backdrop";
+export const BACKDROP_COLORS = ["Green Screen", "Black", "White", "Blue Screen"];
+
+// =====================================================================================
+// Thirds guide (HUD overlay, RP/ui/hud_screen.json shows titles that start with "npcg:")
+// =====================================================================================
+// Guide styles like the Java camera guide: Off, Thirds, Cross (stored: false / true / "cross")
+export const GUIDE_STYLES = ["Off", "Thirds", "Cross"];
+export function guideStyle(player) {
+  const v = player.getDynamicProperty("npcstudio:guides");
+  return v === false ? 0 : v === "cross" ? 2 : 1;
+}
+export function setGuideStyle(player, i) {
+  player.setDynamicProperty("npcstudio:guides", i === 0 ? false : i === 2 ? "cross" : true);
+}
+export function guidesOn(player) {
+  return guideStyle(player) > 0;
+}
+export function setGuides(player, on) {
+  if (on !== guidesOn(player)) setGuideStyle(player, on ? 1 : 0);
+}
+function showGuides(player, on) {
+  try {
+    if (on) player.onScreenDisplay.setTitle(guideStyle(player) === 2 ? "npcg:cross" : "npcg:thirds", { fadeInDuration: 0, stayDuration: 2000000, fadeOutDuration: 0 });
+    else {
+      player.onScreenDisplay.setTitle("npcg:", { fadeInDuration: 0, stayDuration: 1, fadeOutDuration: 0 });
+      player.onScreenDisplay.clearTitle();
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+// =====================================================================================
+// Peek through cameras (Preview Viewer)
+// =====================================================================================
+const peeking = new Map(); // player.id -> { list, i }
+
+export function isPeeking(player) {
+  return peeking.has(player.id);
+}
+
+/** Java-style camera readout: name + LOCKED, then the controls, then position / angles / FOV. */
+function peekText(cam, i) {
+  const name = cam.getDynamicProperty("npcstudio:shot_name") || cam.nameTag || `Camera ${i + 1}`;
+  const st = camState(cam);
+  const l = st.location;
+  const f = (v) => (Math.round(v * 10) / 10).toFixed(1);
+  const locked = isCamLocked(cam) ? "  §d[LOCKED]" : "";
+  return (
+    `§f${name}${locked}\n` +
+    `§7Tap: next camera  |  Double-tap sneak: back  |  Grid: Layers tab\n` +
+    `§8XYZ ${f(l.x)}, ${f(l.y)}, ${f(l.z)}  |  Yaw ${f(st.rotY)}  Pitch ${f(st.rotX)}  |  FOV ${Math.round(st.fov)}`
+  );
+}
+
+export function peek(player) {
+  const list = allCameras(player);
+  if (!list.length) return msg(player, "§cNo cameras yet. Open the Cine Camera > Place Camera At My View.");
+  const sel = getSelectedCamera(player);
+  let i = Math.max(0, list.findIndex((c) => c.id === sel?.id));
+  if (!inCinema(player)) {
+    enterCinema(player, () => {
+      peeking.delete(player.id);
+      showGuides(player, false);
+      actionbar(player, "");
+    }, { keepText: true, quiet: true });
+  }
+  peeking.set(player.id, { list, i });
+  const show = () => {
+    const st = peeking.get(player.id);
+    if (!st) return;
+    st.list = st.list.filter((c) => c.isValid);
+    if (!st.list.length) return exitCinema(player);
+    st.i %= st.list.length;
+    const cam = st.list[st.i];
+    lookThrough(player, cam, { keepText: true, quiet: true });
+    hideHud(player, true);
+    showGuides(player, guidesOn(player));
+    actionbar(player, peekText(cam, st.i));
+    sfx(player, "click");
+  };
+  setCinemaTap(player, () => {
+    const st = peeking.get(player.id);
+    if (!st) return exitCinema(player);
+    st.i = (st.i + 1) % st.list.length;
+    show();
+  });
+  show();
+  // the action bar fades after a few seconds: keep the camera name up while peeking
+  const keep = system.runInterval(() => {
+    const st = peeking.get(player.id);
+    if (!st || !player.isValid) return system.clearRun(keep);
+    const cam = st.list[st.i];
+    if (cam?.isValid) actionbar(player, peekText(cam, st.i));
+  }, 40);
+}
+
+// =====================================================================================
+// Photo Mode
+// =====================================================================================
+function flash(player) {
+  try {
+    player.camera.fade({ fadeTime: { fadeInTime: 0.04, holdTime: 0.06, fadeOutTime: 0.35 }, fadeColor: { red: 1, green: 1, blue: 1 } });
+  } catch {
+    /* ignore */
+  }
+  sfx(player, "shutter");
+}
+
+/** Freeze the current first-person view as a camera (lens a little in front, so your own invisible head isn't in it). */
+function holdCurrentView(player) {
+  const eye = player.getHeadLocation();
+  const r = player.getRotation();
+  const f = forward(r.y);
+  const loc = { x: eye.x + f.x * 0.6, y: eye.y, z: eye.z + f.z * 0.6 };
+  try {
+    player.camera.setCamera(CAM_PRESET, { location: loc, rotation: { x: r.x, y: r.y } });
+  } catch {
+    /* ignore */
+  }
+}
+
+function countdown(player, then) {
+  let n = 3;
+  const tick = () => {
+    if (!player.isValid) return;
+    if (n > 0) {
+      try {
+        player.onScreenDisplay.setTitle(`§l§f${n}`, { fadeInDuration: 0, stayDuration: 12, fadeOutDuration: 2 });
+      } catch {
+        /* ignore */
+      }
+      sfx(player, "click");
+      n--;
+      system.runTimeout(tick, 14);
+    } else {
+      try {
+        player.onScreenDisplay.clearTitle();
+      } catch {
+        /* ignore */
+      }
+      then();
+    }
+  };
+  tick();
+}
+
+export function photoMode(player) {
+  const fromPeek = isPeeking(player);
+  if (!fromPeek && !inCinema(player)) msg(player, "§b§l» Photo Mode §r§7— after the flash, take your screenshot. §fTap the screen§7 to come back.");
+  countdown(player, () => {
+    if (!inCinema(player)) {
+      enterCinema(player, undefined, { fade: false, quiet: true });
+      holdCurrentView(player);
+    }
+    peeking.delete(player.id);
+    showGuides(player, false);
+    actionbar(player, "");
+    hideHud(player, false);
+    flash(player);
+    setCinemaTap(player, () => exitCinema(player));
+  });
+}
+
+// =====================================================================================
+// Green screen (backdrop)
+// =====================================================================================
+const backdrops = new Map(); // player.id -> entity
+
+function viewPoint(player) {
+  // where the shot is taken from: the camera you're looking through, else your eyes
+  if (inCinema(player) || isPeeking(player)) {
+    const cam = getSelectedCamera(player);
+    if (cam?.isValid) return camState(cam).location;
+  }
+  return player.getHeadLocation();
+}
+
+/** Centre of the scene: your selected NPCs, else NPCs near where you look. */
+function sceneCenter(player, from) {
+  let npcs = getSelection(player);
+  if (!npcs.length) {
+    npcs = [...player.dimension.getEntities({ families: [NPC_FAMILY], location: player.location, maxDistance: 24 })];
+  }
+  if (!npcs.length) {
+    const f = forward(player.getRotation().y);
+    return { x: from.x + f.x * 4, y: player.location.y, z: from.z + f.z * 4 };
+  }
+  const c = { x: 0, y: Infinity, z: 0 };
+  for (const n of npcs) {
+    c.x += n.location.x / npcs.length;
+    c.z += n.location.z / npcs.length;
+    c.y = Math.min(c.y, n.location.y);
+  }
+  return c;
+}
+
+export function removeBackdrop(player) {
+  const b = backdrops.get(player.id);
+  backdrops.delete(player.id);
+  try {
+    if (b?.isValid) b.remove();
+  } catch {
+    /* ignore */
+  }
+}
+export function getBackdrop(player) {
+  const b = backdrops.get(player.id);
+  return b?.isValid ? b : undefined;
+}
+
+/** color: 0 green, 1 black, 2 white, 3 blue */
+export function placeBackdrop(player, color = 0) {
+  removeBackdrop(player);
+  const from = viewPoint(player);
+  const c = sceneCenter(player, from);
+  const dist = Math.hypot(from.x - c.x, from.z - c.z);
+  const size = clamp(Math.ceil(dist * 2 + 12), 16, 200);
+  try {
+    const b = player.dimension.spawnEntity(BACKDROP_ID, { x: c.x, y: c.y + 0.02, z: c.z });
+    b.setProperty("npcstudio:size", size);
+    b.setProperty("npcstudio:color", color);
+    b.setDynamicProperty("npcstudio:owner", player.id);
+    backdrops.set(player.id, b);
+    return b;
+  } catch (e) {
+    msg(player, `§cCouldn't place the backdrop: ${e}`);
+  }
+}
+
+// =====================================================================================
+// Hide / show
+// =====================================================================================
+const HIDE_KEY = "npcstudio:hidden_at";
+
+function sceneNpcs(player) {
+  return [...player.dimension.getEntities({ families: [NPC_FAMILY], location: player.location, maxDistance: 128 })];
+}
+
+export function npcsHidden(player) {
+  return !!player.getDynamicProperty("npcstudio:npcs_hidden");
+}
+
+/** NPCs are lifted far up out of sight and put back exactly (armor, items and name tags go with them). */
+export function setNpcsHidden(player, on) {
+  if (on) {
+    const list = [];
+    for (const n of sceneNpcs(player)) {
+      if (n.getDynamicProperty(HIDE_KEY) !== undefined) continue;
+      try {
+        if (n.getComponent("minecraft:riding")) continue; // in a boat / minecart: leave it
+      } catch {
+        /* ignore */
+      }
+      const l = n.location;
+      const r = n.getRotation();
+      setJson(n, HIDE_KEY, { x: l.x, y: l.y, z: l.z, ry: r.y, dim: n.dimension.id });
+      try {
+        n.teleport({ x: l.x, y: Math.min(l.y + 220, 318), z: l.z });
+        list.push(n.id);
+      } catch {
+        n.setDynamicProperty(HIDE_KEY, undefined);
+      }
+    }
+    for (const m of player.dimension.getEntities({ tags: [MOB_TAG], location: player.location, maxDistance: 128 })) {
+      try {
+        m.addEffect("invisibility", 20 * 3600, { amplifier: 0, showParticles: false });
+        m.setDynamicProperty("npcstudio:mob_hidden", true);
+      } catch {
+        /* ignore */
+      }
+    }
+    player.setDynamicProperty("npcstudio:npcs_hidden", true);
+  } else {
+    showAllHidden(player.dimension);
+    player.setDynamicProperty("npcstudio:npcs_hidden", undefined);
+  }
+}
+
+function showAllHidden(dimension) {
+  for (const n of dimension.getEntities({ families: [NPC_FAMILY] })) {
+    const at = getJson(n, HIDE_KEY, undefined);
+    if (!at) continue;
+    try {
+      n.teleport({ x: at.x, y: at.y, z: at.z }, { rotation: { x: 0, y: at.ry } });
+    } catch {
+      /* ignore */
+    }
+    n.setDynamicProperty(HIDE_KEY, undefined);
+  }
+  for (const m of dimension.getEntities({ tags: [MOB_TAG] })) {
+    if (!m.getDynamicProperty("npcstudio:mob_hidden")) continue;
+    try {
+      m.removeEffect("invisibility");
+    } catch {
+      /* ignore */
+    }
+    m.setDynamicProperty("npcstudio:mob_hidden", undefined);
+  }
+}
+
+export function camerasHidden(player) {
+  return !!player.getDynamicProperty("npcstudio:cams_hidden");
+}
+export function setCamerasHidden(player, on) {
+  for (const cam of player.dimension.getEntities({ type: CAMERA_ID })) {
+    try {
+      cam.setProperty("npcstudio:hidden", on);
+      if (on) {
+        if (cam.getDynamicProperty("npcstudio:shot_name") === undefined) cam.setDynamicProperty("npcstudio:shot_name", cam.nameTag || "");
+        cam.nameTag = "";
+      } else {
+        const prev = cam.getDynamicProperty("npcstudio:shot_name");
+        if (prev !== undefined) cam.nameTag = prev;
+        cam.setDynamicProperty("npcstudio:shot_name", undefined);
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+  player.setDynamicProperty("npcstudio:cams_hidden", on ? true : undefined);
+}
+
+export function nameTagsHidden(player) {
+  return !!player.getDynamicProperty("npcstudio:tags_hidden");
+}
+export function setNameTagsHidden(player, on) {
+  for (const n of sceneNpcs(player)) {
+    try {
+      if (on) {
+        if (n.getDynamicProperty("npcstudio:layer_name") === undefined) n.setDynamicProperty("npcstudio:layer_name", n.nameTag || "");
+        n.nameTag = "";
+      } else {
+        const prev = n.getDynamicProperty("npcstudio:layer_name");
+        if (prev !== undefined) n.nameTag = prev;
+        n.setDynamicProperty("npcstudio:layer_name", undefined);
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+  player.setDynamicProperty("npcstudio:tags_hidden", on ? true : undefined);
+}
+
+export { areOutlinesHidden, setOutlinesHidden };
+
+// =====================================================================================
+// Layer Shot
+// =====================================================================================
+export function layerShot(player, color = 0) {
+  const cam = getSelectedCamera(player);
+  const steps = [
+    { name: "① Full shot", run: () => {} },
+    { name: "② NPCs on " + BACKDROP_COLORS[color].toLowerCase(), run: () => placeBackdrop(player, color) },
+    { name: "③ Background only", run: () => {
+      removeBackdrop(player);
+      setNpcsHidden(player, true);
+    } }
+  ];
+  let i = 0;
+  const cleanup = () => {
+    removeBackdrop(player);
+    if (npcsHidden(player)) setNpcsHidden(player, false);
+  };
+  msg(player, `§b§l» Layer Shot §r§7— 3 photos from ${cam ? `§f${cam.nameTag}` : "§fyour view"}§7. After each §fflash§7, take a screenshot, then §ftap the screen§7 for the next one.`);
+  const shoot = () => {
+    steps[i].run();
+    hideHud(player, false);
+    system.runTimeout(() => flash(player), 4);
+  };
+  countdown(player, () => {
+    enterCinema(player, cleanup, { quiet: true });
+    if (cam?.isValid) lookThrough(player, cam, { quiet: true });
+    else holdCurrentView(player);
+    peeking.delete(player.id);
+    showGuides(player, false);
+    setCinemaTap(player, () => {
+      i++;
+      if (i >= steps.length) {
+        exitCinema(player);
+        msg(player, "§aLayer Shot done: 3 photos that line up perfectly.");
+        return;
+      }
+      shoot();
+    });
+    system.runTimeout(shoot, 8);
+  });
+}
+
+// =====================================================================================
+// Safety: after a reload, put back anything left hidden and remove stray backdrops
+// =====================================================================================
+system.runTimeout(() => {
+  for (const d of ["overworld", "nether", "the_end"]) {
+    try {
+      const dim = world.getDimension(d);
+      showAllHidden(dim);
+      for (const b of dim.getEntities({ type: BACKDROP_ID })) b.remove();
+    } catch {
+      /* ignore */
+    }
+  }
+}, 35);
+
+// =====================================================================================
+// Depth Map mode (a stand-in for Java's DMS shader): with the "NPC Studio Depth Map" resource pack on,
+// every texture is white. This mode adds what DMS does with depth:
+//   white until Gradient Start, then a straight fade to black over Max Distance (black fog), and a
+//   black sky / background (a 512-block black box around your view). Noon + clear weather keep the
+//   white even, outlines / name tags / cameras are hidden. Off puts everything back.
+// /npcstudio:depth toggles it.
+// =====================================================================================
+const DEPTH_SKY_ID = "npcstudio:depth_sky";
+const depthState = new Map(); // player.id -> { restore, sky, loop }
+export const DEPTH_STARTS = [0, 8, 16, 32, 48, 64, 96, 128]; // blocks (DMS "Gradient Start")
+export const DEPTH_LENGTHS = [16, 32, 48, 64, 96, 128, 192, 256]; // blocks (DMS "Max. Distance")
+export const chunks = (blocks) => `${blocks / 16} ch (${blocks} blocks)`;
+export function depthOn(player) {
+  return depthState.has(player.id);
+}
+function depthSetting(player, key, list, def) {
+  const v = Number(player.getDynamicProperty(`npcstudio:depth_${key}`) ?? def);
+  return list.includes(v) ? v : def;
+}
+export const depthStart = (player) => depthSetting(player, "start", DEPTH_STARTS, 0);
+export const depthLength = (player) => depthSetting(player, "length", DEPTH_LENGTHS, 192); // DMS default: 12 chunks
+export function setDepthStart(player, v) {
+  player.setDynamicProperty("npcstudio:depth_start", v);
+  if (depthOn(player)) depthFog(player, true);
+}
+export function setDepthLength(player, v) {
+  player.setDynamicProperty("npcstudio:depth_length", v);
+  if (depthOn(player)) depthFog(player, true);
+}
+function depthFog(player, on) {
+  try {
+    player.runCommand("fog @s remove npcstudio_depthmap");
+    if (on) player.runCommand(`fog @s push npcstudio:depth_${depthStart(player)}_${depthLength(player)} npcstudio_depthmap`);
+  } catch {
+    /* ignore */
+  }
+  // the black sky box ends where the fog is fully black: everything past it is black anyway, and it
+  // has to stay inside the render distance (the game doesn't draw anything farther)
+  const sky = depthState.get(player.id)?.sky;
+  if (on && sky?.isValid) {
+    try {
+      sky.setProperty("npcstudio:size", Math.min(512, depthStart(player) + depthLength(player) + 1));
+    } catch {
+      /* ignore */
+    }
+  }
+}
+function removeSkies(dim) {
+  try {
+    for (const e of dim.getEntities({ type: DEPTH_SKY_ID })) e.remove();
+  } catch {
+    /* ignore */
+  }
+}
+// ---------- ground haze: soft white fog lying on the ground (the milky look of DMS's floor) ----------
+// Flat particle layers on the ground around your view; the black depth fog darkens them with distance
+// like everything else. Off / Light / Medium / Strong.
+export const HAZE_LEVELS = ["Off", "Light", "Medium", "Strong"];
+export function hazeLevel(player) {
+  const v = Number(player.getDynamicProperty("npcstudio:depth_haze") ?? 2);
+  return v >= 0 && v < HAZE_LEVELS.length ? v : 2;
+}
+export function setHazeLevel(player, v) {
+  player.setDynamicProperty("npcstudio:depth_haze", v);
+}
+const HAZE_RADIUS = 24;
+const HAZE_STEP = 4;
+function groundY(dim, x, z, fallback) {
+  try {
+    const b = dim.getTopmostBlock?.({ x, z });
+    if (b) return b.y + 1;
+  } catch {
+    /* unloaded */
+  }
+  return fallback;
+}
+function spawnHaze(player) {
+  const level = hazeLevel(player);
+  if (!level) return;
+  const dim = player.dimension;
+  const c = viewPoint(player);
+  const cx = Math.round(c.x / HAZE_STEP) * HAZE_STEP;
+  const cz = Math.round(c.z / HAZE_STEP) * HAZE_STEP;
+  for (let dx = -HAZE_RADIUS; dx <= HAZE_RADIUS; dx += HAZE_STEP) {
+    for (let dz = -HAZE_RADIUS; dz <= HAZE_RADIUS; dz += HAZE_STEP) {
+      if (dx * dx + dz * dz > HAZE_RADIUS * HAZE_RADIUS) continue;
+      const x = cx + dx;
+      const z = cz + dz;
+      const y = groundY(dim, x, z, c.y - 1.6);
+      for (const h of [0.15, 0.9]) {
+        try {
+          dim.spawnParticle(`npcstudio:haze_${level}`, { x: x + 0.5, y: y + h, z: z + 0.5 });
+        } catch {
+          /* unloaded */
+        }
+      }
+    }
+  }
+}
+
+export function setDepth(player, on) {
+  if (on === depthOn(player)) return;
+  const dim = player.dimension;
+  const run = (c) => {
+    try {
+      dim.runCommand(c);
+    } catch {
+      /* ignore */
+    }
+  };
+  if (on) {
+    let time = 6000;
+    let cycle = true;
+    try {
+      time = world.getTimeOfDay();
+      cycle = world.gameRules.doDayLightCycle !== false;
+    } catch {
+      /* ignore */
+    }
+    const st = { restore: { time, cycle, names: nameTagsHidden(player), cams: camerasHidden(player), outlines: areOutlinesHidden() } };
+    depthState.set(player.id, st);
+    run("gamerule dodaylightcycle false");
+    run("time set 6000");
+    run("weather clear 999999");
+    if (!nameTagsHidden(player)) setNameTagsHidden(player, true);
+    if (!camerasHidden(player)) setCamerasHidden(player, true);
+    setOutlinesHidden(true);
+    depthFog(player, true);
+    hideHud(player, true); // hotbar and HUD off like a shader capture (messages stay)
+    // black sky: a huge black box that follows your view (camera view included)
+    try {
+      st.sky = dim.spawnEntity(DEPTH_SKY_ID, viewPoint(player));
+      depthFog(player, true);
+    } catch (e) {
+      console.warn(`[NPC Studio] depth sky: ${e}`);
+    }
+    let tick = 0;
+    st.loop = system.runInterval(() => {
+      if (!player.isValid) return;
+      if (tick++ % 3 === 0) spawnHaze(player); // every 1.5 s (particles live 2.4 s)
+      if (st.sky?.isValid) {
+        try {
+          st.sky.teleport(viewPoint(player));
+        } catch {
+          /* ignore */
+        }
+      }
+    }, 10);
+    msg(player, "§bDepth map on. §7Needs the §fNPC Studio Depth Map§7 resource pack ON (above NPC Studio). Keep your render distance above Start + Max dist. /npcstudio:depth to leave.");
+  } else {
+    const st = depthState.get(player.id);
+    depthState.delete(player.id);
+    if (st.loop !== undefined) system.clearRun(st.loop);
+    try {
+      st.sky?.remove();
+    } catch {
+      /* ignore */
+    }
+    depthFog(player, false);
+    if (!inCinema(player)) {
+      try {
+        player.onScreenDisplay.setHudVisibility(HudVisibility.Reset);
+      } catch {
+        /* ignore */
+      }
+    }
+    const s = st.restore;
+    run(`time set ${s.time}`);
+    if (s.cycle) run("gamerule dodaylightcycle true");
+    if (!s.names) setNameTagsHidden(player, false);
+    if (!s.cams) setCamerasHidden(player, false);
+    setOutlinesHidden(s.outlines);
+    msg(player, "§7Depth map off.");
+  }
+}
+// after a /reload or rejoin no sky box should be left behind
+system.runTimeout(() => ["overworld", "nether", "the_end"].forEach((d) => {
+  try {
+    removeSkies(world.getDimension(d));
+  } catch {
+    /* ignore */
+  }
+}), 40);
