@@ -5,7 +5,7 @@
  * steppers (- / +) change the NPC right away and redraw the panel, so the world stays in view.
  * Copyright (c) 2026 NoxeelMC.
  */
-import { VERSION } from "./version.js";
+import { RELEASE } from "./version.js";
 import { openLiveEditor, hasLiveEditor } from "./liveform.js";
 import { CAPE_COUNT, FIRST_CUSTOM_CAPE, FIRST_JAVA_CAPE } from "./capes.js";
 import { inCinema } from "./cinema.js";
@@ -117,7 +117,7 @@ export function openStudio(player, tab) {
   const body = npc
     ? `§7Editing §f${npcLabel(npc)}${sel > 1 ? `§7 +${sel - 1} more` : ""}${isLocked(npc) ? " §c(locked)" : ""}`
     : "§7No NPC selected. Tap an NPC with the Baton, or a head on the right.";
-  const bodyV = `${body} §8v${VERSION}`;
+  const bodyV = `${body} §8NPC Studio ${RELEASE}`;
   const m = menu("NPC Studio", bodyV).reopen(self);
   if (npc && isLocked(npc) && (tab === 0 || tab === 1)) {
     m.btn("Unlock This NPC", ICON("lock"), () => {

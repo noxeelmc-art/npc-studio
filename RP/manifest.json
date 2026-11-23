@@ -2,9 +2,13 @@
   "format_version": 2,
   "header": {
     "name": "NPC Studio V3 [RP]",
-    "description": "Resource pack for NPC Studio custom NPCs. Made by NoxeelMC \u2014 subscribe on YouTube: youtube.com/@NoxeelMC",
+    "description": "§bThe look of NPC Studio V3:§r NPC models, skins, capes, posable mobs, cameras and the Studio panel.\n§7Works with the NPC Studio V3 behavior pack.\n§fBy NoxeelMC §7· youtube.com/@NoxeelMC",
     "uuid": "b82d7e2a-8ee9-4d8a-a24e-eabd0e1de294",
-    "version": [4, 28, 0],
+    "version": [
+      4,
+      28,
+      0
+    ],
     "min_engine_version": [
       1,
       21,
@@ -15,7 +19,11 @@
     {
       "type": "resources",
       "uuid": "11d768f4-bb2e-45d3-a51c-2d7025d4f85b",
-      "version": [4, 28, 0]
+      "version": [
+        4,
+        28,
+        0
+      ]
     }
   ]
 }

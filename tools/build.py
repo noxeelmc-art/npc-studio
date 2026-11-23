@@ -81,7 +81,8 @@ def write_version():
     """BP/scripts/version.js = the manifest version, shown in the panel (tells which pack a world runs)."""
     v = ".".join(map(str, json.load(open(os.path.join(ROOT, "BP", "manifest.json")))["header"]["version"]))
     with open(os.path.join(ROOT, "BP", "scripts", "version.js"), "w", encoding="utf-8") as f:
-        f.write(f'// written by tools/build.py from BP/manifest.json\nexport const VERSION = "{v}";\n')
+        f.write(f'// written by tools/build.py from BP/manifest.json\nexport const VERSION = "{v}";\n'
+                f'export const RELEASE = "V3"; // the public name shown in the panel (the manifest number keeps counting up)\n')
     return v
 
 
